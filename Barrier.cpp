@@ -92,12 +92,12 @@ size_t CL::LastInBarrier::getThreadWaitingCount() const
 bool CL::LastInBarrier::wait()
 { 
 	std::unique_lock<std::mutex> lock(_mutex);
-	size_t nGen = _nLockThread;
+	size_t nGen = _nGen;
 	bool bResult = _nThreadWaiting++ == _nThread - 1;
 	 
 	if (!bResult)
 	{ 
-		while (nGen == _nLockThread)
+		while (nGen == _nGen)
 		{  
 			_waitVarible.wait(lock);
 		} 
@@ -108,7 +108,7 @@ bool CL::LastInBarrier::wait()
 
 void CL::LastInBarrier::free()
 { 
-	_nLockThread++;
+	_nGen++;
 	_nThreadWaiting = 0;
 	_waitVarible.notify_all();
 }
