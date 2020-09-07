@@ -24,12 +24,12 @@ namespace CL
 	private:
 	};
 
-	template<class EventListener, class... Arguments> class Delegat final : public DelegateBase<Arguments...>
+	template<class EventListener, class... Arguments> class Delegate final : public DelegateBase<Arguments...>
 	{
 		typedef void (EventListener::* Metod)(Arguments...);
 	public:
 
-		Delegat(EventListener* pListener, Metod pMethod) :
+		Delegate(EventListener* pListener, Metod pMethod) :
 			_pListener(pListener), _pMethod(pMethod)
 		{
 
@@ -42,7 +42,7 @@ namespace CL
 
 		virtual DelegateBase* createCopy() const override
 		{
-			return new Delegat<EventListener, Arguments...>(_pListener, _pMethod);
+			return new Delegate<EventListener, Arguments...>(_pListener, _pMethod);
 		}
 
 	private:
@@ -50,12 +50,12 @@ namespace CL
 		Metod _pMethod;
 	};  
 
-	template<class EventListener> class Delegat<EventListener, void>  final
+	template<class EventListener> class Delegate<EventListener, void>  final
 	{
 		typedef void (EventListener::* Metod)();
 	public:
 
-		Delegat(EventListener* pListener, Metod pMethod) :
+		Delegate(EventListener* pListener, Metod pMethod) :
 			_pListener(pListener), _pMethod(pMethod)
 		{
 
@@ -68,7 +68,7 @@ namespace CL
 
 		virtual DelegateBase* createCopy() const override
 		{
-			return new Delegat<EventListener>(_pListener, _pMethod);
+			return new Delegate<EventListener>(_pListener, _pMethod);
 		}
 
 	private:
@@ -76,21 +76,21 @@ namespace CL
 		Metod _pMethod;
 	};
 
-	template<class... Arguments> class AbstractDelegat final
+	template<class... Arguments> class AbstracteDelegate final
 	{
 	public:
 
-		AbstractDelegat(const DelegateBase<Arguments...>& delegat)
+		AbstracteDelegate(const DelegateBase<Arguments...>& delegat)
 		{
 			_pDelegat = delegat.createCopy();
 		}
 
-		AbstractDelegat(const AbstractDelegat<Arguments...>& delegat)
+		AbstracteDelegate(const AbstracteDelegate<Arguments...>& delegat)
 		{
 			_pDelegat = delegat._pDelegat->createCopy();
 		}
 
-		AbstractDelegat<Arguments...>& operator = (const AbstractDelegat<Arguments...>& delegat)
+		AbstracteDelegate<Arguments...>& operator = (const AbstracteDelegate<Arguments...>& delegat)
 		{
 			if (_pDelegat)
 			{
@@ -107,7 +107,7 @@ namespace CL
 			_pDelegat->call(argumetns...);
 		}
 
-		~AbstractDelegat()
+		~AbstracteDelegate()
 		{
 			if (_pDelegat)
 			{
@@ -119,25 +119,22 @@ namespace CL
 		DelegateBase<Arguments...>* _pDelegat;
 	};
 
-	template<> class AbstractDelegat<> final
+	template<> class AbstracteDelegate<> final
 	{
 	public:
 
-		AbstractDelegat(const DelegateBase<>& delegat)
-		{
-			std::cout << "AbstractDelegat(const DelegateBase<>& delegat)" << std::endl;
+		AbstracteDelegate(const DelegateBase<>& delegat)
+		{ 
 			_pDelegat = delegat.createCopy();
 		}
 
-		AbstractDelegat(const AbstractDelegat<>& delegat)
-		{
-			std::cout << "AbstractDelegat(const AbstractDelegat<>& delegat)" << std::endl;
+		AbstracteDelegate(const AbstracteDelegate<>& delegat)
+		{ 
 			_pDelegat = delegat._pDelegat->createCopy();
 		}
 
-		AbstractDelegat& operator = (const AbstractDelegat<>& delegat)
-		{
-			std::cout << "AbstractDelegat& operator = (const AbstractDelegat<>& delegat)" << std::endl;
+		AbstracteDelegate& operator = (const AbstracteDelegate<>& delegat)
+		{ 
 
 			if (_pDelegat)
 			{
@@ -154,7 +151,7 @@ namespace CL
 			_pDelegat->call();
 		}
 
-		~AbstractDelegat()
+		~AbstracteDelegate()
 		{
 			if (_pDelegat)
 			{
