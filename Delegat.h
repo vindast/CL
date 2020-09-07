@@ -13,6 +13,17 @@ namespace CL
 	private:
 	};
 
+	template <> class DelegateBase<> 
+	{
+	public:
+
+		virtual void call() = 0;
+
+		virtual DelegateBase* createCopy() const = 0;
+
+	private:
+	};
+
 	template<class EventListener, class... Arguments> class Delegat final : public DelegateBase<Arguments...>
 	{
 		typedef void (EventListener::* Metod)(Arguments...);
@@ -29,7 +40,7 @@ namespace CL
 			(_pListener->*_pMethod)(argumetns...);
 		}
 
-		virtual DelegateBase* createCopy() const
+		virtual DelegateBase* createCopy() const override
 		{
 			return new Delegat<EventListener, Arguments...>(_pListener, _pMethod);
 		}
@@ -50,14 +61,14 @@ namespace CL
 
 		}
 
-		void call() 
+		void call() override
 		{
 			(_pListener->*_pMethod)();
 		}
 
-		virtual DelegateBase* createCopy() const
+		virtual DelegateBase* createCopy() const override
 		{
-			return new Delegat<EventListener, void>(_pListener, _pMethod);
+			return new Delegat<EventListener>(_pListener, _pMethod);
 		}
 
 	private:
@@ -87,6 +98,8 @@ namespace CL
 			}
 
 			_pDelegat = delegat._pDelegat->createCopy();
+
+			return *this;
 		}
 
 		void call(Arguments... argumetns) 
@@ -104,5 +117,52 @@ namespace CL
 
 	private:
 		DelegateBase<Arguments...>* _pDelegat;
+	};
+
+	template<> class AbstractDelegat<> final
+	{
+	public:
+
+		AbstractDelegat(const DelegateBase<>& delegat)
+		{
+			std::cout << "AbstractDelegat(const DelegateBase<>& delegat)" << std::endl;
+			_pDelegat = delegat.createCopy();
+		}
+
+		AbstractDelegat(const AbstractDelegat<>& delegat)
+		{
+			std::cout << "AbstractDelegat(const AbstractDelegat<>& delegat)" << std::endl;
+			_pDelegat = delegat._pDelegat->createCopy();
+		}
+
+		AbstractDelegat& operator = (const AbstractDelegat<>& delegat)
+		{
+			std::cout << "AbstractDelegat& operator = (const AbstractDelegat<>& delegat)" << std::endl;
+
+			if (_pDelegat)
+			{
+				delete _pDelegat;
+			}
+
+			_pDelegat = delegat._pDelegat->createCopy();
+
+			return *this;
+		}
+
+		void call()
+		{
+			_pDelegat->call();
+		}
+
+		~AbstractDelegat()
+		{
+			if (_pDelegat)
+			{
+				delete _pDelegat;
+			}
+		}
+
+	private:
+		DelegateBase<>* _pDelegat;
 	};
 };
