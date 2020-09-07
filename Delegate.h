@@ -6,7 +6,7 @@ namespace CL
 	{
 	public:
 
-		virtual void call(Arguments... argumetns) = 0;
+		virtual void call(Arguments... arguments) = 0;
 
 		virtual DelegateBase* createCopy() const = 0;
 
@@ -26,18 +26,18 @@ namespace CL
 
 	template<class EventListener, class... Arguments> class Delegate final : public DelegateBase<Arguments...>
 	{
-		typedef void (EventListener::* Metod)(Arguments...);
+		typedef void (EventListener::* Method)(Arguments...);
 	public:
 
-		Delegate(EventListener* pListener, Metod pMethod) :
+		Delegate(EventListener* pListener, Method pMethod) :
 			_pListener(pListener), _pMethod(pMethod)
 		{
 
 		}
 
-		void call(Arguments... argumetns) override
+		void call(Arguments... arguments) override
 		{
-			(_pListener->*_pMethod)(argumetns...);
+			(_pListener->*_pMethod)(arguments...);
 		}
 
 		DelegateBase* createCopy() const override
@@ -47,15 +47,15 @@ namespace CL
 
 	private:
 		EventListener* _pListener;
-		Metod _pMethod;
+		Method _pMethod;
 	};  
 
-	template<class EventListener> class Delegate<EventListener, void>  final
+	/*template<class EventListener> class Delegate<EventListener, void>  final
 	{
-		typedef void (EventListener::* Metod)();
+		typedef void (EventListener::* Method)();
 	public:
 
-		Delegate(EventListener* pListener, Metod pMethod) :
+		Delegate(EventListener* pListener, Method pMethod) :
 			_pListener(pListener), _pMethod(pMethod)
 		{
 
@@ -73,93 +73,80 @@ namespace CL
 
 	private:
 		EventListener* _pListener;
-		Metod _pMethod;
-	};
+		Method _pMethod;
+	};*/
 
-	template<class... Arguments> class AbstracteDelegate final
+	template<class... Arguments> class AbstractDelegate final
 	{
 	public:
 
-		AbstracteDelegate(const DelegateBase<Arguments...>& delegat)
+		AbstractDelegate(const DelegateBase<Arguments...>& delegat)
 		{
-			_pDelegat = delegat.createCopy();
+			_pDelegate = delegat.createCopy();
 		}
 
-		AbstracteDelegate(const AbstracteDelegate<Arguments...>& delegat)
+		AbstractDelegate(const AbstractDelegate<Arguments...>& delegat)
 		{
-			_pDelegat = delegat._pDelegat->createCopy();
+			_pDelegate = delegat._pDelegate->createCopy();
 		}
 
-		AbstracteDelegate<Arguments...>& operator = (const AbstracteDelegate<Arguments...>& delegat)
+		AbstractDelegate<Arguments...>& operator = (const AbstractDelegate<Arguments...>& delegat)
 		{
-			if (_pDelegat)
-			{
-				delete _pDelegat;
-			}
+			delete _pDelegate;
 
-			_pDelegat = delegat._pDelegat->createCopy();
+			_pDelegate = delegat._pDelegate->createCopy();
 
 			return *this;
 		}
 
-		void call(Arguments... argumetns) 
+		void call(Arguments... arguments) 
 		{
-			_pDelegat->call(argumetns...);
+			_pDelegate->call(arguments...);
 		}
 
-		~AbstracteDelegate()
+		~AbstractDelegate()
 		{
-			if (_pDelegat)
-			{
-				delete _pDelegat;
-			}
+			delete _pDelegate;
 		}
 
 	private:
-		DelegateBase<Arguments...>* _pDelegat;
+		DelegateBase<Arguments...>* _pDelegate;
 	};
 
-	template<> class AbstracteDelegate<> final
+	/*template<> class AbstractDelegate<> final
 	{
 	public:
 
-		AbstracteDelegate(const DelegateBase<>& delegat)
+		AbstractDelegate(const DelegateBase<>& delegat)
 		{ 
-			_pDelegat = delegat.createCopy();
+			_pDelegate = delegat.createCopy();
 		}
 
-		AbstracteDelegate(const AbstracteDelegate<>& delegat)
+		AbstractDelegate(const AbstractDelegate<>& delegat)
 		{ 
-			_pDelegat = delegat._pDelegat->createCopy();
+			_pDelegate = delegat._pDelegate->createCopy();
 		}
 
-		AbstracteDelegate& operator = (const AbstracteDelegate<>& delegat)
-		{ 
+		AbstractDelegate& operator = (const AbstractDelegate<>& delegat)
+		{  
+			delete _pDelegate;
 
-			if (_pDelegat)
-			{
-				delete _pDelegat;
-			}
-
-			_pDelegat = delegat._pDelegat->createCopy();
+			_pDelegate = delegat._pDelegate->createCopy();
 
 			return *this;
 		}
 
 		void call()
 		{
-			_pDelegat->call();
+			_pDelegate->call();
 		}
 
-		~AbstracteDelegate()
+		~AbstractDelegate()
 		{
-			if (_pDelegat)
-			{
-				delete _pDelegat;
-			}
+			delete _pDelegate;
 		}
 
 	private:
-		DelegateBase<>* _pDelegat;
-	};
+		DelegateBase<>* _pDelegate;
+	};*/
 };
