@@ -40,7 +40,7 @@ namespace CL
 			(_pListener->*_pMethod)(argumetns...);
 		}
 
-		virtual DelegateBase* createCopy() const override
+		DelegateBase* createCopy() const override
 		{
 			return new Delegate<EventListener, Arguments...>(_pListener, _pMethod);
 		}
@@ -66,7 +66,7 @@ namespace CL
 			(_pListener->*_pMethod)();
 		}
 
-		virtual DelegateBase* createCopy() const override
+		DelegateBase* createCopy() const override
 		{
 			return new Delegate<EventListener>(_pListener, _pMethod);
 		}
