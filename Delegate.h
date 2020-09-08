@@ -1,4 +1,5 @@
 #pragma once
+#include "UniquePtr.h"
 
 namespace CL
 { 
@@ -10,16 +11,10 @@ namespace CL
 
 		virtual DelegateBase* createCopy() const = 0;
 
-	private:
-	};
+		virtual ~DelegateBase()
+		{
 
-	template <> class DelegateBase<> 
-	{
-	public:
-
-		virtual void call() = 0;
-
-		virtual DelegateBase* createCopy() const = 0;
+		}
 
 	private:
 	};
@@ -48,33 +43,7 @@ namespace CL
 	private:
 		EventListener* _pListener;
 		Method _pMethod;
-	};  
-
-	/*template<class EventListener> class Delegate<EventListener, void>  final
-	{
-		typedef void (EventListener::* Method)();
-	public:
-
-		Delegate(EventListener* pListener, Method pMethod) :
-			_pListener(pListener), _pMethod(pMethod)
-		{
-
-		}
-
-		void call() override
-		{
-			(_pListener->*_pMethod)();
-		}
-
-		DelegateBase* createCopy() const override
-		{
-			return new Delegate<EventListener>(_pListener, _pMethod);
-		}
-
-	private:
-		EventListener* _pListener;
-		Method _pMethod;
-	};*/
+	};   
 
 	template<class... Arguments> class AbstractDelegate final
 	{
@@ -82,71 +51,29 @@ namespace CL
 
 		AbstractDelegate(const DelegateBase<Arguments...>& delegat)
 		{
-			_pDelegate = delegat.createCopy();
+			_upDelegate = delegat.createCopy();
 		}
 
 		AbstractDelegate(const AbstractDelegate<Arguments...>& delegat)
 		{
-			_pDelegate = delegat._pDelegate->createCopy();
+			_upDelegate = delegat._upDelegate->createCopy();
 		}
 
 		AbstractDelegate<Arguments...>& operator = (const AbstractDelegate<Arguments...>& delegat)
-		{
-			delete _pDelegate;
-
-			_pDelegate = delegat._pDelegate->createCopy();
+		{  
+			_upDelegate = delegat._upDelegate->createCopy();
 
 			return *this;
 		}
 
 		void call(Arguments... arguments) 
 		{
-			_pDelegate->call(arguments...);
+			_upDelegate->call(arguments...);
 		}
-
-		~AbstractDelegate()
-		{
-			delete _pDelegate;
-		}
+		 
 
 	private:
-		DelegateBase<Arguments...>* _pDelegate;
+		UniquePtr<DelegateBase<Arguments...>> _upDelegate;
 	};
 
-	/*template<> class AbstractDelegate<> final
-	{
-	public:
-
-		AbstractDelegate(const DelegateBase<>& delegat)
-		{ 
-			_pDelegate = delegat.createCopy();
-		}
-
-		AbstractDelegate(const AbstractDelegate<>& delegat)
-		{ 
-			_pDelegate = delegat._pDelegate->createCopy();
-		}
-
-		AbstractDelegate& operator = (const AbstractDelegate<>& delegat)
-		{  
-			delete _pDelegate;
-
-			_pDelegate = delegat._pDelegate->createCopy();
-
-			return *this;
-		}
-
-		void call()
-		{
-			_pDelegate->call();
-		}
-
-		~AbstractDelegate()
-		{
-			delete _pDelegate;
-		}
-
-	private:
-		DelegateBase<>* _pDelegate;
-	};*/
 };
