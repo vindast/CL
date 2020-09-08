@@ -5,25 +5,20 @@ namespace CL
 	template<class Object> class UniquePtr final
 	{
 	public:
-
-		UniquePtr() : _pObject(nullptr)
-		{
-
-		}
-
-		UniquePtr(Object* pObject) :
+  
+		UniquePtr(Object* pObject = nullptr) :
 			_pObject(pObject)
 		{
 
 		}
 
-		UniquePtr(UniquePtr<Object>& ptr) :
+		UniquePtr(UniquePtr<Object>&& ptr) :
 			_pObject(ptr._pObject)
 		{
 			ptr._pObject = nullptr;
-		} 
+		}
 
-		UniquePtr& operator = (UniquePtr<Object>& ptr)
+		UniquePtr& operator = (UniquePtr<Object>&& ptr)
 		{
 			freeObject();
 
@@ -31,15 +26,15 @@ namespace CL
 			ptr._pObject = nullptr;
 
 			return *this;
-		}
+		} 
 
-		UniquePtr& operator = (Object* pObject)
+		static UniquePtr<Object> move(UniquePtr<Object>& ptr)
 		{
-			freeObject();
+			UniquePtr<Object> tmp(ptr._pObject);
 
-			_pObject = pObject;
+			ptr._pObject = nullptr;
 
-			return *this;
+			return tmp;
 		}
 		 
 		bool valid() const
@@ -51,17 +46,7 @@ namespace CL
 		{
 			freeObject();
 		}
-
-		/*Object* operator ()()
-		{
-			return _pObject;
-		}
-
-		const Object* operator ()() const
-		{
-			return _pObject;
-		}*/
-
+ 
 		Object* operator -> ()
 		{
 			return _pObject;
@@ -72,13 +57,24 @@ namespace CL
 			return _pObject;
 		}
 
+
+
 	private:
 		Object* _pObject;
 
-		/*UniquePtr(const UniquePtr<Object>& ptr) = delete;
+		UniquePtr(const UniquePtr<Object>& ptr) = delete;
 
-		UniquePtr& operator = (const UniquePtr<Object>& ptr) = delete;*/
+		UniquePtr& operator = (const UniquePtr<Object>& ptr) = delete;
 
+		/*UniquePtr& operator = (Object* pObject)
+		{
+			freeObject();
+
+			_pObject = pObject;
+
+			return *this;
+		}*/
+		 
 		void freeObject()
 		{
 			if (_pObject)
