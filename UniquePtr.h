@@ -6,19 +6,19 @@ namespace CL
 	{
 	public:
   
-		UniquePtr(Object* pObject = nullptr) :
+		UniquePtr(Object* pObject = nullptr) noexcept :
 			_pObject(pObject)
 		{
 
 		}
 
-		UniquePtr(UniquePtr<Object>&& ptr) :
+		UniquePtr(UniquePtr<Object>&& ptr) noexcept :
 			_pObject(ptr._pObject)
 		{
 			ptr._pObject = nullptr;
 		}
 
-		UniquePtr& operator = (UniquePtr<Object>&& ptr)
+		UniquePtr& operator = (UniquePtr<Object>&& ptr) noexcept
 		{
 			freeObject();
 
@@ -28,16 +28,18 @@ namespace CL
 			return *this;
 		} 
 
-		static UniquePtr<Object> move(UniquePtr<Object>& ptr)
+		static UniquePtr<Object>&& move(UniquePtr<Object>& ptr) noexcept
 		{
-			UniquePtr<Object> tmp(ptr._pObject);
+		//	UniquePtr<Object> tmp(ptr._pObject);
 
-			ptr._pObject = nullptr;
+		//	ptr._pObject = nullptr;
 
-			return tmp;
+		//	return tmp;
+
+			return static_cast<UniquePtr<Object>&&>(ptr);
 		}
 		 
-		bool valid() const
+		bool valid() const noexcept
 		{
 			return _pObject;
 		}
@@ -47,12 +49,12 @@ namespace CL
 			freeObject();
 		}
  
-		Object* operator -> ()
+		Object* operator -> () noexcept
 		{
 			return _pObject;
 		}
 
-		const Object* operator -> () const
+		const Object* operator -> () const noexcept
 		{
 			return _pObject;
 		}
