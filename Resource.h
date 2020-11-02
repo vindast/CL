@@ -277,12 +277,18 @@ namespace CL
 		{
 			return resources.end();
 		}
-		~ResourceDB()
+		void clear()
 		{
 			for (auto it : resources)
 			{
 				delete it.second;
 			}
+
+			resources.clear();
+		}
+		~ResourceDB()
+		{
+			clear();
 		}
 
 		std::map<std::string, Resource<ResourceType>*> resources;
