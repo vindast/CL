@@ -206,6 +206,7 @@ namespace CL
 			if (it != resources.end())
 			{
 				bErased = true;
+				delete it->second;
 				resources.erase(it);
 			}
 
@@ -222,7 +223,7 @@ namespace CL
 				bRenamed = true;
 				itOldName->second->setNewName(sNewName);
 
-				resources.insert(std::make_pair(sNewName, move(itOldName->second)));
+				resources.insert(std::make_pair(sNewName, itOldName->second));
 				resources.erase(itOldName);
 			}
 
@@ -239,10 +240,29 @@ namespace CL
 
 			assert(it != resources.end());
 
-			return it->second.data();
+			return it->second;
+		}
+		auto begin()
+		{
+			return resources.begin();
+		}
+		auto begin() const
+		{
+			return resources.begin();
+		}
+		auto end() const 
+		{
+			return resources.end();
+		}
+		~ResourceDB()
+		{
+			for (auto it : resources)
+			{
+				delete it.second;
+			}
 		}
 
-		std::map<std::string, UniquePtr<Resource<ResourceType>>> resources;
+		std::map<std::string, Resource<ResourceType>*> resources;
 	private:
 		ResourceDB(const ResourceDB&) = delete;
 		ResourceDB& operator = (const ResourceDB&) = delete;
