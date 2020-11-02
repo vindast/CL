@@ -12,6 +12,10 @@ namespace CL
 	{
 	public:
 		virtual void unsubscribe() = 0;
+		virtual ~ResourceHandleBase()
+		{
+
+		}
 	};
 
 	class ResourceBase
@@ -137,6 +141,20 @@ namespace CL
 			assert(_pObj);
 			return _pObj;
 		}
+		const ObjType* data() const
+		{
+			assert(_pObj);
+			return _pObj;
+		}
+		ObjType* data()
+		{
+			assert(_pObj);
+			return _pObj;
+		}
+		~ResourceHandle()
+		{
+			unsubscribe();
+		}
 
 		ObjType* _pObj = nullptr;
 		ResourceBase* _pResource = nullptr;
@@ -234,6 +252,11 @@ namespace CL
 			auto it = resources.find(sName);
 			return it != resources.end();
 		}
+		bool exist(const std::string& sName) 
+		{
+			auto it = resources.find(sName);
+			return it != resources.end();
+		}
 		Resource<ResourceType>* find(const std::string& sName)
 		{
 			auto it = resources.find(sName);
@@ -267,4 +290,17 @@ namespace CL
 		ResourceDB(const ResourceDB&) = delete;
 		ResourceDB& operator = (const ResourceDB&) = delete;
 	};
+
+	template<class ResourceType> std::string uniqueName(const std::string& sStartName, const ResourceDB<ResourceType>& resourceMap)
+	{
+		std::string sName = sStartName;
+		size_t iId = 0;
+
+		while (resourceMap.resources.find(sName) != resourceMap.resources.end())
+		{
+			sName = sStartName + "_" + std::to_string(iId++);
+		}
+
+		return sName;
+	}
 };
