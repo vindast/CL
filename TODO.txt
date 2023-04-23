@@ -1,0 +1,10 @@
+CL:TODO
+
+CL
+
+1. Отрефакторить весь код
+2. сделать ренжи
+3. сделать embedded array
+4. array
+5. is_constructible, is_same, is_base_of, enable_if_t, is_reference, is_rvalue_reference, is_function, is_invocable
+6. оператор new для контейнеров
