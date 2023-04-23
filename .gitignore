@@ -1,6 +1,5 @@
 Exe
 Intermediate
 .vs
-/*.vcxproj
 /*.filters
 /CommonLibrary.vcxproj.user
