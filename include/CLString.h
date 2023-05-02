@@ -498,8 +498,14 @@ namespace CL
 		}
 		String Substring(size_t Position, size_t FragmentLength = NullPos()) const noexcept
 		{
-			CL_ASSERT(Position < _nLength);
-			return String(GetData() + Position, CL_MIN(FragmentLength, _nLength - Position));
+			String Str;
+
+			if (Position < _nLength)
+			{
+				Str = String(GetData() + Position, CL_MIN(FragmentLength, _nLength - Position));
+			}
+
+			return Str;
 		}
 		bool IsSmallBufferUsed() const noexcept { return _nLength < sizeof(_sbStr); }
 		char* GetData() noexcept { return IsSmallBufferUsed() ? _sbStr.mStr : _heapStr._pStr; }
