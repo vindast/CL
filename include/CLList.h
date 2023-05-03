@@ -262,7 +262,7 @@ namespace CL
 
 			_nElementsCount++;
 		}
-		void PushFront(ObjType&& obj)
+		void EmplaceFront(ObjType&& obj)
 		{
 			ListNode* pNewNode = _pAllocator->Alloc(Forward(obj));
 
