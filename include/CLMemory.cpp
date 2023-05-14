@@ -96,7 +96,7 @@ namespace CL
 
 			for (auto it : UniqueLeaks)
 			{
-				Log.PushMessageFormated("	Count %d, &f, call from: %s ", it.second.Count, ByteToMb(it.second.Size), it.first);
+				Log.PushMessageFormated("	Count %d, %f, call from: %s ", it.second.Count, ByteToMb(it.second.Size), it.first);
 			}
 		}
 
