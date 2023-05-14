@@ -90,13 +90,13 @@ namespace CL
 
 		if (_MemoryTable.size())
 		{
-			Log.PushMessageFormated("Total memory leaks: %d, %f", _MemoryTable.size(), ByteToMb(TotalLeak));
+			Log.PushMessageFormated("Total memory leaks: %d, %f MB", _MemoryTable.size(), ByteToMb(TotalLeak));
 
 			UniqueLeaks = FindUniqueLeaks(_MemoryTable, TotalLeak);
 
 			for (auto it : UniqueLeaks)
 			{
-				Log.PushMessageFormated("	Count %d, %f, call from: %s ", it.second.Count, ByteToMb(it.second.Size), it.first);
+				Log.PushMessageFormated("	Count %d, %f MB, call from: %s ", it.second.Count, ByteToMb(it.second.Size), it.first);
 			}
 		}
 
