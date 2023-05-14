@@ -22,7 +22,7 @@ namespace CL
 			return nullptr;
 		}
 
-		InsertControllSection(pMemory, EMemoryType::mem_malloc, pDebugStr);
+		InsertControllSection(pMemory, EMemoryType::mem_malloc, pDebugStr, Size);
 		return pMemory;
 	}
 
@@ -76,39 +76,43 @@ namespace CL
 			return;
 		}
 
+		auto ByteToMb = [](size_t Byte)->float
+		{
+			return float(Byte) / (1024.0f * 1024.0f);
+		};
+
 		Logger Log("MemoryLeak");
 		Log.Write("\nCL::~MemoryController(): Memory leak detected!");
-
 		Log.PushMessageFormated("Total leaks detected : %d\n", NumError);
 
-		std::unordered_map<const char*, size_t> UniqueLeaks;
+		size_t TotalLeak = 0;
+		std::unordered_map<const char*, MemoryLeakData> UniqueLeaks;
 
 		if (_MemoryTable.size())
 		{
-			Log.PushMessageFormated("Total memory leaks: %d", _MemoryTable.size());
+			Log.PushMessageFormated("Total memory leaks: %d, &f", _MemoryTable.size(), ByteToMb(TotalLeak));
 
-			UniqueLeaks = FindUniqueLeaks(_MemoryTable);
+			UniqueLeaks = FindUniqueLeaks(_MemoryTable, TotalLeak);
 
 			for (auto it : UniqueLeaks)
 			{
-				Log.PushMessageFormated("	Count %d, call from: %s ", it.second, it.first);
+				Log.PushMessageFormated("	Count %d, &f, call from: %s ", it.second.Count, ByteToMb(it.second.Size), it.first);
 			}
 		}
 
 		if (_PlacementNewMemoryTable.size())
 		{
 			Log.PushMessageFormated("Total placement new / delete mismatch: %d", _PlacementNewMemoryTable.size());
-
-			UniqueLeaks = FindUniqueLeaks(_PlacementNewMemoryTable);
+			UniqueLeaks = FindUniqueLeaks(_PlacementNewMemoryTable, TotalLeak);
 
 			for (auto it : UniqueLeaks)
 			{
-				Log.PushMessageFormated("	Count %d, call from: %s ", it.second, it.first);
+				Log.PushMessageFormated("	Count %d, call from: %s ", it.second.Count, it.first);
 			}
 		}
 	}
 
-	void MemoryController::InsertControllSection(void* pMemory, EMemoryType Type, const char* pDebugStr)
+	void MemoryController::InsertControllSection(void* pMemory, EMemoryType Type, const char* pDebugStr, size_t Size)
 	{
 		if (pMemory == nullptr)
 		{
@@ -135,6 +139,7 @@ namespace CL
 		Data.pMemory = pMemory;
 		Data.pDebugStr = pDebugStr;
 		Data.Type = Type;
+		Data.Size = Size;
 		Table.insert(std::make_pair(size_t(pMemory), Data));
 	}
 
@@ -172,21 +177,23 @@ namespace CL
 		Table.erase(it);
 	}
 
-	std::unordered_map<const char*, size_t> MemoryController::FindUniqueLeaks(const std::unordered_map<size_t, MemoryData>& InMap)
+	std::unordered_map<const char*, MemoryController::MemoryLeakData> MemoryController::FindUniqueLeaks(const std::unordered_map<size_t, MemoryData>& InMap, size_t& TotalLeak)
 	{
-		std::unordered_map<const char*, size_t> UniqueLeaks;
+		std::unordered_map<const char*, MemoryLeakData> UniqueLeaks;
 
 		for (auto LeakIt : InMap)
 		{
+			TotalLeak += LeakIt.second.Size;
 			auto it = UniqueLeaks.find(LeakIt.second.pDebugStr);
 
 			if (it == UniqueLeaks.end())
 			{
-				UniqueLeaks.insert(std::make_pair(LeakIt.second.pDebugStr, 1));
+				UniqueLeaks.insert(std::make_pair(LeakIt.second.pDebugStr, MemoryLeakData(1, LeakIt.second.Size)));
 			}
 			else
 			{
-				it->second++;
+				it->second.Count++;
+				it->second.Size += LeakIt.second.Size;
 			}
 		}
 

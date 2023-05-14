@@ -80,6 +80,20 @@ namespace CL
 			void* pMemory;
 			EMemoryType Type;
 			const char* pDebugStr;
+			size_t Size;
+		};
+
+		struct MemoryLeakData
+		{
+			MemoryLeakData() = default;
+			MemoryLeakData(size_t InCount, size_t InSize) :
+				Count(InCount), Size(InSize)
+			{
+
+			}
+
+			size_t Count = 0;
+			size_t Size = 0;
 		};
 
 		CL_DELETE_COPY_OPERATORS(MemoryController)
@@ -94,7 +108,7 @@ namespace CL
 		ObjType* PlacementNew(void* pMem, const char* pDebugStr, Args&&... args)
 		{
 			ObjType* pObj = new(pMem) ObjType(args...);
-			InsertControllSection(pObj, EMemoryType::mem_placement_new, pDebugStr);
+			InsertControllSection(pObj, EMemoryType::mem_placement_new, pDebugStr, 0);
 			return pObj;
 		}
 		template<class ObjType>
@@ -107,7 +121,7 @@ namespace CL
 		ObjType* New(const char* pDebugStr, Args&&... args)
 		{
 			ObjType* pObj = new ObjType(args...);
-			InsertControllSection(pObj, EMemoryType::mem_new, pDebugStr);
+			InsertControllSection(pObj, EMemoryType::mem_new, pDebugStr, sizeof(ObjType));
 			return pObj;
 		}
 		template<class ObjType>
@@ -120,7 +134,7 @@ namespace CL
 		ObjType* NewArr(size_t Length, const char* pDebugStr)
 		{
 			ObjType* pObjs = new ObjType[Length];
-			InsertControllSection(pObjs, EMemoryType::mem_new_array, pDebugStr);
+			InsertControllSection(pObjs, EMemoryType::mem_new_array, pDebugStr, sizeof(ObjType) * Length);
 			return pObjs;
 		}
 		template<class ObjType>
@@ -137,9 +151,9 @@ namespace CL
 		MemoryController();
 		~MemoryController();
 
-		void InsertControllSection(void* pMemory, EMemoryType Type, const char* pDebugStr);
+		void InsertControllSection(void* pMemory, EMemoryType Type, const char* pDebugStr, size_t Size);
 		void EraseControllSection(void* pMemory, EMemoryType Type, const char* pDebugStr);
-		static std::unordered_map<const char*, size_t> FindUniqueLeaks(const std::unordered_map<size_t, MemoryData>& InMap);
+		static std::unordered_map<const char*, MemoryLeakData> FindUniqueLeaks(const std::unordered_map<size_t, MemoryData>& InMap, size_t& TotalLeak);
 
 		//ptr adr - type
 		std::unordered_map<size_t, MemoryData> _MemoryTable;
