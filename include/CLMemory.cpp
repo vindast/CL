@@ -90,7 +90,7 @@ namespace CL
 
 		if (_MemoryTable.size())
 		{
-			Log.PushMessageFormated("Total memory leaks: %d, &f", _MemoryTable.size(), ByteToMb(TotalLeak));
+			Log.PushMessageFormated("Total memory leaks: %d, %f", _MemoryTable.size(), ByteToMb(TotalLeak));
 
 			UniqueLeaks = FindUniqueLeaks(_MemoryTable, TotalLeak);
 
