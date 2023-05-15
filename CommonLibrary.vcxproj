@@ -314,6 +314,7 @@
     <ClInclude Include="include\CLHashMap.h" />
     <ClInclude Include="include\CLHashString.h" />
     <ClInclude Include="include\CLHeapAllocator.h" />
+    <ClInclude Include="include\CLHeapRefAllocator.h" />
     <ClInclude Include="include\CLList.h" />
     <ClInclude Include="include\CLMacroHelper.h" />
     <ClInclude Include="include\CLMemory.h" />

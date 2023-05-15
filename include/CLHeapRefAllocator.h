@@ -50,7 +50,7 @@ namespace CL
 			pMemObject = nullptr;
 			pMemBlock  = nullptr;
 		}
-		operator bool () const { return pData; };
+		operator bool () const { return pMemObject && pMemBlock; };
 	};
 
 	template<typename ValueType, class MemoryObject, class... Args>
