@@ -308,6 +308,7 @@
     <ClInclude Include="include\BinaryList.h" />
     <ClInclude Include="include\Buffer.h" />
     <ClInclude Include="include\BufferAtomicIterator.h" />
+    <ClInclude Include="include\CLByteArray.h" />
     <ClInclude Include="include\CLCommon.h" />
     <ClInclude Include="include\CLDispatcher.h" />
     <ClInclude Include="include\CLEmbeddedArray.h" />
