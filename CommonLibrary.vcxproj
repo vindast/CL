@@ -272,6 +272,7 @@
     <ClCompile Include="include\BinaryList.cpp" />
     <ClCompile Include="include\CLAssert.cpp" />
     <ClCompile Include="include\CLCommon.cpp" />
+    <ClCompile Include="include\CLDirectoryScan.cpp" />
     <ClCompile Include="include\CLHashString.cpp" />
     <ClCompile Include="include\CLMacroHelper.cpp" />
     <ClCompile Include="include\CLMemory.cpp" />
@@ -310,6 +311,7 @@
     <ClInclude Include="include\BufferAtomicIterator.h" />
     <ClInclude Include="include\CLByteArray.h" />
     <ClInclude Include="include\CLCommon.h" />
+    <ClInclude Include="include\CLDirectoryScan.h" />
     <ClInclude Include="include\CLDispatcher.h" />
     <ClInclude Include="include\CLEmbeddedArray.h" />
     <ClInclude Include="include\CLHashMap.h" />
