@@ -20,4 +20,7 @@ namespace CL
 	{
 		return (static_cast<Object&&>(Obj));
 	}
+
+	//CRC32 from https://habr.com/ru/articles/38622/
+	unsigned long Crc32(const unsigned char* Buff, size_t Length);
 }
