@@ -3,3 +3,4 @@ Intermediate
 .vs
 /*.filters
 /CommonLibrary.vcxproj.user
+/Logs
