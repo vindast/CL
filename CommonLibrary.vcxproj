@@ -338,6 +338,7 @@
     <ClInclude Include="include\CLStringUtils.h" />
     <ClInclude Include="include\CLThread.h" />
     <ClInclude Include="include\CLTypeId.h" />
+    <ClInclude Include="include\CLVector.h" />
     <ClInclude Include="include\common.h" />
     <ClInclude Include="include\Delegate.h" />
     <ClInclude Include="include\DynamicBuffer.h" />
