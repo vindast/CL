@@ -162,12 +162,12 @@ namespace CL
 		{
 			if (OtherVector._nElement)
 			{
-				Resize(OtherVector._Capacity);
+				ResizeImpl(OtherVector._Capacity);
 				_nElement = OtherVector._nElement;
 
 				for (size_t i = 0; i < _nElement; i++)
 				{
-					CL_PLACEMENT_NEW(_pMemory + i, Element, OtherVector._pMemory[i]);
+					CL_PLACEMENT_NEW(_pObjects + i, Element, OtherVector._pObjects[i]);
 				}
 			}
 		}
@@ -186,25 +186,25 @@ namespace CL
 			{
 				for (size_t i = 0; i < _nElement; i++)
 				{
-					CL_PLACEMENT_DELETE(_pMemory + i);
+					CL_PLACEMENT_DELETE(_pObjects + i);
 				}
 
 				_nElement = OtherVector._nElement;
 
 				for (size_t i = 0; i < _nElement; i++)
 				{
-					CL_PLACEMENT_NEW(_pMemory + i, Element, OtherVector._pMemory[i]);
+					CL_PLACEMENT_NEW(_pObjects + i, Element, OtherVector._pObjects[i]);
 				}
 			}
 			else
 			{
 				Clear();
-				Resize(OtherVector._Capacity);
+				ResizeImpl(OtherVector._Capacity);
 				_nElement = OtherVector._nElement;
 
 				for (size_t i = 0; i < _nElement; i++)
 				{
-					CL_PLACEMENT_NEW(_pMemory + i, Element, OtherVector._pMemory[i]);
+					CL_PLACEMENT_NEW(_pObjects + i, Element, OtherVector._pObjects[i]);
 				}
 			}
 
@@ -212,11 +212,11 @@ namespace CL
 		}
 		VectorType(VectorType&& OtherVector) : 
 			_Capacity(OtherVector._Capacity),
-			_pMemory(OtherVector._pMemory),
+			_pObjects(OtherVector._pObjects),
 			_nElement(OtherVector._nElement)
 		{
 			OtherVector._Capacity = 0;
-			OtherVector._pMemory = nullptr;
+			OtherVector._pObjects = nullptr;
 			OtherVector._nElement = 0;
 		}
 		VectorType& operator = (VectorType&& OtherVector)
@@ -224,11 +224,11 @@ namespace CL
 			Clear();
 
 			_Capacity = OtherVector._Capacity;
-			_pMemory = OtherVector._pMemory;
+			_pObjects = OtherVector._pObjects;
 			_nElement = OtherVector._nElement;
 
 			OtherVector._Capacity = 0;
-			OtherVector._pMemory = nullptr;
+			OtherVector._pObjects = nullptr;
 			OtherVector._nElement = 0;
 
 			return *this;
@@ -268,7 +268,7 @@ namespace CL
 		{
 			for (size_t i = 0; i < _nElement; i++)
 			{
-				L(_pMemory[i]);
+				L(_pObjects[i]);
 			}
 		}
 		template<class Lambda>
@@ -276,27 +276,27 @@ namespace CL
 		{
 			for (size_t i = 0; i < _nElement; i++)
 			{
-				L(_pMemory[i]);
+				L(_pObjects[i]);
 			}
 		}
 		void PushBack(const Element& NewElement)
 		{
 			if (_Capacity <= _nElement)
 			{
-				Resize(_Capacity * 2 + 1);
+				ResizeImpl(_Capacity * 2 + 1);
 			}
 
-			CL_PLACEMENT_NEW(_pMemory + _nElement, Element, NewElement);
+			CL_PLACEMENT_NEW(_pObjects + _nElement, Element, NewElement);
 			_nElement++;
 		}
 		void EmplaceBack(Element&& NewElement)
 		{
 			if (_Capacity <= _nElement)
 			{
-				Resize(_Capacity * 2 + 1);
+				ResizeImpl(_Capacity * 2 + 1);
 			}
 
-			CL_PLACEMENT_NEW(_pMemory + _nElement, Element, NewElement);
+			CL_PLACEMENT_NEW(_pObjects + _nElement, Element, NewElement);
 			_nElement++;
 		}
 		void Erase(size_t Index, bool bSwapBack = false)
@@ -310,16 +310,16 @@ namespace CL
 				{
 					if (std::is_move_assignable<Element>::value)
 					{
-						_pMemory[Index] = Move(_pMemory[LastElementIndex]);
+						_pObjects[Index] = Move(_pObjects[LastElementIndex]);
 					}
 					else
 					{
-						_pMemory[Index] = _pMemory[LastElementIndex];
+						_pObjects[Index] = _pObjects[LastElementIndex];
 					}
 				}
 				else if (std::is_trivially_copyable<Element>::value)
 				{
-					memmove(_pMemory + Index, _pMemory + Index + 1, sizeof(Element) * (_nElement - Index - 1));
+					memmove(_pObjects + Index, _pObjects + Index + 1, sizeof(Element) * (_nElement - Index - 1));
 				}
 				else
 				{
@@ -327,17 +327,17 @@ namespace CL
 					{
 						if (std::is_move_assignable<Element>::value)
 						{
-							_pMemory[i] = Move(_pMemory[i + 1]);
+							_pObjects[i] = Move(_pObjects[i + 1]);
 						}
 						else
 						{
-							_pMemory[i] = _pMemory[i + 1];
+							_pObjects[i] = _pObjects[i + 1];
 						}
 					}
 				}
 			}
 			
-			CL_PLACEMENT_DELETE(_pMemory + LastElementIndex);
+			CL_PLACEMENT_DELETE(_pObjects + LastElementIndex);
 			_nElement--;
 
 			if (!_nElement)
@@ -346,49 +346,63 @@ namespace CL
 			}
 		}
 		size_t GetCapacity() const { return _Capacity; }
-		size_t GetNumElement() const { return _nElement; }
+		size_t GetSize() const { return _nElement; }
 		void Truncate()
 		{
 			if (_nElement < _Capacity)
 			{
-				Resize(_nElement);
+				ResizeImpl(_nElement);
 			}
 		}
 		void Reserve(size_t RequestedSize)
 		{
 			if (_Capacity < RequestedSize)
 			{
-				Resize(RequestedSize);
+				ResizeImpl(RequestedSize);
+			}
+		}
+		void Resize(size_t RequestedSize)
+		{
+			ResizeImpl(RequestedSize);
+
+			if (_nElement < RequestedSize)
+			{
+				for (size_t i = _nElement; i < RequestedSize; i++)
+				{
+					CL_PLACEMENT_NEW(_pObjects + i, Element);
+				}
+
+				_nElement = RequestedSize;
 			}
 		}
 		void Clear()
 		{
-			if (_pMemory)
+			if (_pObjects)
 			{
 				for (size_t i = 0; i < _nElement; i++)
 				{
-					CL_PLACEMENT_DELETE(_pMemory + i);
+					CL_PLACEMENT_DELETE(_pObjects + i);
 				}
 
-				CL_FREE(_pMemory);
+				CL_FREE(_pObjects);
 				_Capacity = 0;
 				_nElement = 0;
-				_pMemory = nullptr;
+				_pObjects = nullptr;
 			}
 		}
 		Element& operator [](size_t Index)
 		{
 			CL_ASSERT(Index < _nElement);
-			return _pMemory[Index];
+			return _pObjects[Index];
 		}
 		const Element& operator [](size_t Index) const
 		{
 			CL_ASSERT(Index < _nElement);
-			return _pMemory[Index];
+			return _pObjects[Index];
 		}
 		ForwardIterator begin()
 		{
-			return ForwardIterator(_pMemory, _pMemory + _nElement - 1);
+			return ForwardIterator(_pObjects, _pObjects + _nElement - 1);
 		}
 		ForwardIterator end()
 		{
@@ -396,7 +410,7 @@ namespace CL
 		}
 		ConstForwardIterator begin() const
 		{
-			return ConstForwardIterator(_pMemory, _pMemory + _nElement - 1);
+			return ConstForwardIterator(_pObjects, _pObjects + _nElement - 1);
 		}
 		ConstForwardIterator end() const
 		{
@@ -404,18 +418,18 @@ namespace CL
 		}
 		unsigned long ComputeCrc32() const
 		{
-			return Crc32((const unsigned char*)_pMemory, sizeof(Element) * _nElement);
+			return Crc32((const unsigned char*)_pObjects, sizeof(Element) * _nElement);
 		}
-		Element* GetData() { return _pMemory; }
-		const Element* GetData() const { return _pMemory; }
+		Element* GetData() { return _pObjects; }
+		const Element* GetData() const { return _pObjects; }
 		~Vector()
 		{
 			Clear();
 		}
 	private:
-		void Resize(size_t NewCapacity)
+		void ResizeImpl(size_t NewCapacity)
 		{
-			Element* pNewMemory = (Element*)CL_MALLOC(sizeof(Element) * NewCapacity);
+			Element* pNewObjects = (Element*)CL_MALLOC(sizeof(Element) * NewCapacity);
 
 			if (_nElement)
 			{
@@ -423,23 +437,23 @@ namespace CL
 				{
 					if (std::is_move_assignable<Element>::value)
 					{
-						CL_PLACEMENT_NEW(pNewMemory + i, Element, CL::Move(_pMemory[i]));
+						CL_PLACEMENT_NEW(pNewObjects + i, Element, CL::Move(_pObjects[i]));
 					}
 					else
 					{ 
-						CL_PLACEMENT_NEW(pNewMemory + i, Element, _pMemory[i]);
+						CL_PLACEMENT_NEW(pNewObjects + i, Element, _pObjects[i]);
 					}
 
-					CL_PLACEMENT_DELETE(_pMemory + i);
+					CL_PLACEMENT_DELETE(_pObjects + i);
 				}
 			}
 
-			CL_FREE(_pMemory);
-			_pMemory = pNewMemory;
+			CL_FREE(_pObjects);
+			_pObjects = pNewObjects;
 			_Capacity = NewCapacity;
 		}
 
-		Element* _pMemory = nullptr;
+		Element* _pObjects = nullptr;
 		size_t _Capacity = 0;
 		size_t _nElement = 0;
 	};
