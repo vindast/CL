@@ -263,6 +263,21 @@ namespace CL
 
 			return *this;
 		}
+		template<class... Args>
+		VectorType(size_t NumElements, Args... VArgs)
+		{
+			if (NumElements)
+			{
+				ResizeImpl(NumElements);
+
+				for (size_t i = 0; i < NumElements; i++)
+				{
+					CL_PLACEMENT_NEW(_pObjects + i, Element, VArgs...);
+				}
+
+				_nElement = NumElements;
+			}
+		}
 		template<class Lambda>
 		void ForEach(Lambda& L)
 		{
@@ -361,7 +376,8 @@ namespace CL
 				ResizeImpl(RequestedSize);
 			}
 		}
-		void Resize(size_t RequestedSize)
+		template<class... Args>
+		void Resize(size_t RequestedSize, Args... VArgs)
 		{
 			ResizeImpl(RequestedSize);
 
@@ -369,7 +385,7 @@ namespace CL
 			{
 				for (size_t i = _nElement; i < RequestedSize; i++)
 				{
-					CL_PLACEMENT_NEW(_pObjects + i, Element);
+					CL_PLACEMENT_NEW(_pObjects + i, Element, VArgs...);
 				}
 
 				_nElement = RequestedSize;
