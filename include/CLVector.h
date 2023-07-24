@@ -438,6 +438,7 @@ namespace CL
 		}
 		Element* GetData() { return _pObjects; }
 		const Element* GetData() const { return _pObjects; }
+		bool IsEmpty() const { return !_nElement; }
 		~Vector()
 		{
 			Clear();
