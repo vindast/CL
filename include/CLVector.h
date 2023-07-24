@@ -370,6 +370,8 @@ namespace CL
 		{
 			return Crc32((const unsigned char*)_pMemory, sizeof(Element) * _nElement);
 		}
+		Element* GetData() { return _pMemory; }
+		const Element* GetData() const { return _pMemory; }
 		~Vector()
 		{
 			Clear();
