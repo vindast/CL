@@ -233,7 +233,36 @@ namespace CL
 
 			return *this;
 		}
+		VectorType(const std::initializer_list<Element>& Init)
+		{
+			if (Init.size())
+			{
+				Reserve(Init.size());
 
+				for (auto& it : Init)
+				{
+					PushBack(it);
+				}
+			}
+		}
+		VectorType& operator = (const std::initializer_list<Element>& Init)
+		{
+			if (Init.size())
+			{
+				Reserve(Init.size());
+
+				for (auto& it : Init)
+				{
+					PushBack(it);
+				}
+			}
+			else
+			{
+				Clear();
+			}
+
+			return *this;
+		}
 		template<class Lambda>
 		void ForEach(Lambda& L)
 		{
@@ -323,6 +352,13 @@ namespace CL
 			if (_nElement < _Capacity)
 			{
 				Resize(_nElement);
+			}
+		}
+		void Reserve(size_t RequestedSize)
+		{
+			if (_Capacity < RequestedSize)
+			{
+				Resize(RequestedSize);
 			}
 		}
 		void Clear()
