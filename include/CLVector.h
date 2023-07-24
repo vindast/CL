@@ -306,7 +306,7 @@ namespace CL
 		}
 		void EmplaceBack(Element& NewElement)
 		{
-			EmplaceBack(CL::Move(NewElement));
+			EmplaceBack(Move(NewElement));
 		}
 		void EmplaceBack(Element&& NewElement)
 		{
@@ -315,7 +315,7 @@ namespace CL
 				ResizeImpl(_Capacity * 2 + 1);
 			}
 
-			CL_PLACEMENT_NEW(_pObjects + _nElement, Element, NewElement);
+			CL_PLACEMENT_NEW(_pObjects + _nElement, Element, Forward(NewElement));
 			_nElement++;
 		}
 		void Erase(size_t Index, bool bSwapBack = false)
