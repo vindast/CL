@@ -304,6 +304,10 @@ namespace CL
 			CL_PLACEMENT_NEW(_pObjects + _nElement, Element, NewElement);
 			_nElement++;
 		}
+		void EmplaceBack(Element& NewElement)
+		{
+			EmplaceBack(CL::Move(NewElement));
+		}
 		void EmplaceBack(Element&& NewElement)
 		{
 			if (_Capacity <= _nElement)
