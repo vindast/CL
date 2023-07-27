@@ -247,6 +247,8 @@ namespace CL
 		}
 		VectorType& operator = (const std::initializer_list<Element>& Init)
 		{
+			Clear();
+
 			if (Init.size())
 			{
 				Reserve(Init.size());
@@ -256,9 +258,50 @@ namespace CL
 					PushBack(it);
 				}
 			}
-			else
+
+			return *this;
+		}
+		VectorType(const std::initializer_list<Element*>& Init)
+		{
+			//initializer_list must contain range of elements to copy and we fill them from memory.
+			CL_ASSERT(Init.size() == 2);
+
+			const Element* First = *Init.begin();
+			const Element* Last = *(Init.begin() + 1);
+			size_t Size = Last - First;
+
+			if (Size)
 			{
-				Clear();
+				Reserve(Size);
+
+				while (First <= Last)
+				{
+					PushBack(*First);
+					First++;
+				}
+			}
+
+		}
+		VectorType& operator = (const std::initializer_list<Element*>& Init)
+		{
+			Clear();
+
+			if (Init.size())
+			{
+				//initializer_list must contain range of elements to copy and we fill them from memory.
+				CL_ASSERT(Init.size() == 2);
+
+				const Element* First = *Init.begin();
+				const Element* Last = *(Init.begin() + 1);
+				size_t Size = Last - First;
+
+				Reserve(Size);
+
+				while (First <= Last)
+				{
+					PushBack(*First);
+					First++;
+				}
 			}
 
 			return *this;
