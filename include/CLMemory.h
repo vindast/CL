@@ -6,22 +6,21 @@
 #define CL_MEMORY_LEAK_DEBUG
 
 #ifdef CL_MEMORY_LEAK_DEBUG
-#define CL_FRIEND_MEMORY_CONTROLLER() friend class CL::MemoryController;
 
 #define CL_PLACEMENT_NEW(mem, type, ...)\
-CL::MemoryController::GetInstance().PlacementNew<type>(mem, CL_FUNCSIG(), __VA_ARGS__)
+CL::MemoryController::GetInstance().PlacementNew<type>(mem, new(mem) type(__VA_ARGS__), CL_FUNCSIG())
 
 #define CL_PLACEMENT_DELETE(pObj)\
 CL::MemoryController::GetInstance().PlacementDelete(pObj, CL_FUNCSIG())
 
 #define CL_NEW(type, ...)\
-CL::MemoryController::GetInstance().New<type>(CL_FUNCSIG(), __VA_ARGS__)
+CL::MemoryController::GetInstance().New<type>(new type(__VA_ARGS__), CL_FUNCSIG())
 
 #define CL_DELETE(pObj)\
 CL::MemoryController::GetInstance().Delete(pObj, CL_FUNCSIG())
 
 #define CL_NEW_ARR(type, lenght)\
-CL::MemoryController::GetInstance().NewArr<type>(lenght, CL_FUNCSIG())
+CL::MemoryController::GetInstance().NewArr<type>(new type[lenght], lenght, CL_FUNCSIG())
 
 #define CL_DELETE_ARR(pObjs)\
 CL::MemoryController::GetInstance().DeleteArr(pObjs, CL_FUNCSIG())
@@ -33,7 +32,6 @@ CL::MemoryController::GetInstance().Malloc(size, CL_FUNCSIG())
 CL::MemoryController::GetInstance().Free(pMem, CL_FUNCSIG())
 
 #else
-#define CL_FRIEND_MEMORY_CONTROLLER()
 
 #define CL_PLACEMENT_NEW(mem, type, ...)\
 new(mem) type(__VA_ARGS__)
@@ -105,9 +103,8 @@ namespace CL
 		}
 		static MemoryController& GetInstance();
 		template<class ObjType, class... Args>
-		ObjType* PlacementNew(void* pMem, const char* pDebugStr, Args&&... args)
+		ObjType* PlacementNew(void* pMem, ObjType* pObj, const char* pDebugStr)
 		{
-			ObjType* pObj = new(pMem) ObjType(args...);
 			InsertControllSection(pObj, EMemoryType::mem_placement_new, pDebugStr, 0);
 			return pObj;
 		}
@@ -117,10 +114,9 @@ namespace CL
 			EraseControllSection(pObj, CL::EMemoryType::mem_placement_new, pDebugStr);
 			PlacementDeleteImplementation(pObj);
 		}
-		template<class ObjType, class... Args>
-		ObjType* New(const char* pDebugStr, Args&&... args)
+		template<class ObjType>
+		ObjType* New(ObjType* pObj, const char* pDebugStr)
 		{
-			ObjType* pObj = new ObjType(args...);
 			InsertControllSection(pObj, EMemoryType::mem_new, pDebugStr, sizeof(ObjType));
 			return pObj;
 		}
@@ -131,9 +127,8 @@ namespace CL
 			delete pObj;
 		}
 		template<class ObjType>
-		ObjType* NewArr(size_t Length, const char* pDebugStr)
+		ObjType* NewArr(ObjType* pObjs, size_t Length, const char* pDebugStr)
 		{
-			ObjType* pObjs = new ObjType[Length];
 			InsertControllSection(pObjs, EMemoryType::mem_new_array, pDebugStr, sizeof(ObjType) * Length);
 			return pObjs;
 		}
