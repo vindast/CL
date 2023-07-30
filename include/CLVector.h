@@ -370,7 +370,7 @@ namespace CL
 			{
 				if (bSwapBack)
 				{
-					if (std::is_move_assignable<Element>::value)
+					if (std::is_move_constructible<Element>::value)
 					{
 						_pObjects[Index] = Move(_pObjects[LastElementIndex]);
 					}
