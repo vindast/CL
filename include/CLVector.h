@@ -261,7 +261,7 @@ namespace CL
 
 			return *this;
 		}
-		VectorType(const std::initializer_list<Element*>& Init)
+		VectorType(const std::initializer_list<const Element*>& Init)
 		{
 			//initializer_list must contain range of elements to copy and we fill them from memory.
 			CL_ASSERT(Init.size() == 2);
@@ -282,7 +282,7 @@ namespace CL
 			}
 
 		}
-		VectorType& operator = (const std::initializer_list<Element*>& Init)
+		VectorType& operator = (const std::initializer_list<const Element*>& Init)
 		{
 			Clear();
 
