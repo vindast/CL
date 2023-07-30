@@ -499,7 +499,7 @@ namespace CL
 			{
 				for (size_t i = 0; i < _nElement; i++)
 				{
-					if (std::is_move_assignable<Element>::value)
+					if (std::is_move_constructible<Element>::value)
 					{
 						CL_PLACEMENT_NEW(pNewObjects + i, Element, CL::Move(_pObjects[i]));
 					}
