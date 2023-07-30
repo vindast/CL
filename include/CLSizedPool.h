@@ -281,12 +281,12 @@ namespace CL
 				bDestroyPoolNode = true;
 			}
 
-			CL_PLACEMENT_DELETE(pObj);
+			CL_PLACEMENT_DELETE(ObjType, pObj);
 
 			if (bDestroyPoolNode)
 			{
 				_LookUpTable.Erase(pNode, (char*)pNode->Data());
-				CL_PLACEMENT_DELETE(pNode);
+				CL_PLACEMENT_DELETE(__PoolSizedElementsBlock<ObjType>, pNode);
 				CL_FREE(pNode);
 			}
 
@@ -306,7 +306,7 @@ namespace CL
 			{
 				__PoolSizedElementsBlock<ObjType>* pNodeToFree = pNode;
 				pNode = pNode->pNext;
-				CL_PLACEMENT_DELETE(pNodeToFree);
+				CL_PLACEMENT_DELETE(__PoolSizedElementsBlock<ObjType>, pNodeToFree);
 				CL_FREE(pNodeToFree);
 			}
 
@@ -316,7 +316,7 @@ namespace CL
 			{
 				__PoolSizedElementsBlock<ObjType>* pNodeToFree = pNode;
 				pNode = pNode->pNext;
-				CL_PLACEMENT_DELETE(pNodeToFree);
+				CL_PLACEMENT_DELETE(__PoolSizedElementsBlock<ObjType>, pNodeToFree);
 				CL_FREE(pNodeToFree);
 			}
 		}

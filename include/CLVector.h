@@ -186,7 +186,7 @@ namespace CL
 			{
 				for (size_t i = 0; i < _nElement; i++)
 				{
-					CL_PLACEMENT_DELETE(_pObjects + i);
+					CL_PLACEMENT_DELETE(Element, _pObjects + i);
 				}
 
 				_nElement = OtherVector._nElement;
@@ -399,7 +399,7 @@ namespace CL
 				}
 			}
 			
-			CL_PLACEMENT_DELETE(_pObjects + LastElementIndex);
+			CL_PLACEMENT_DELETE(Element, _pObjects + LastElementIndex);
 			_nElement--;
 
 			if (!_nElement)
@@ -444,7 +444,7 @@ namespace CL
 			{
 				for (size_t i = 0; i < _nElement; i++)
 				{
-					CL_PLACEMENT_DELETE(_pObjects + i);
+					CL_PLACEMENT_DELETE(Element, _pObjects + i);
 				}
 
 				CL_FREE(_pObjects);
@@ -508,7 +508,7 @@ namespace CL
 						CL_PLACEMENT_NEW(pNewObjects + i, Element, _pObjects[i]);
 					}
 
-					CL_PLACEMENT_DELETE(_pObjects + i);
+					CL_PLACEMENT_DELETE(Element, _pObjects + i);
 				}
 			}
 

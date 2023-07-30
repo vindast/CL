@@ -45,7 +45,7 @@ namespace CL
 		}
 		void free(ObjectPoolNode<objType>* pNode)
 		{
-			CL_PLACEMENT_DELETE(pNode->data);
+			CL_PLACEMENT_DELETE(objType, &pNode->data);
 
 			pNode->pNext = pCurrentFreeNod;
 			pCurrentFreeNod = pNode;
@@ -115,14 +115,14 @@ namespace CL
 		}
 		void free(ObjectPoolNode<objType>* pNode)
 		{
-			CL_PLACEMENT_DELETE(&pNode->data);
+			CL_PLACEMENT_DELETE(objType, &pNode->data);
 
 			pNode->pNext = pCurrentFreeNod;
 			pCurrentFreeNod = pNode;
 		}
 		void freeAsync(ObjectPoolNode<objType>* pNode)
 		{ 
-			CL_PLACEMENT_DELETE(&pNode->data);
+			CL_PLACEMENT_DELETE(objType, &pNode->data);
 
 			const LockGuard<CriticalSection> lock(_hCS);
 			pNode->pNext = pCurrentFreeNod;

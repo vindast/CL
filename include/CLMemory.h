@@ -10,20 +10,20 @@
 #define CL_PLACEMENT_NEW(mem, type, ...)\
 CL::MemoryController::GetInstance().PlacementNew<type>(mem, new(mem) type(__VA_ARGS__), CL_FUNCSIG())
 
-#define CL_PLACEMENT_DELETE(pObj)\
-CL::MemoryController::GetInstance().PlacementDelete(pObj, CL_FUNCSIG())
+#define CL_PLACEMENT_DELETE(type, pObj)\
+CL::MemoryController::GetInstance().PlacementDelete(pObj, CL_FUNCSIG())->~type()
 
 #define CL_NEW(type, ...)\
 CL::MemoryController::GetInstance().New<type>(new type(__VA_ARGS__), CL_FUNCSIG())
 
 #define CL_DELETE(pObj)\
-CL::MemoryController::GetInstance().Delete(pObj, CL_FUNCSIG())
+delete CL::MemoryController::GetInstance().Delete(pObj, CL_FUNCSIG())
 
 #define CL_NEW_ARR(type, lenght)\
 CL::MemoryController::GetInstance().NewArr<type>(new type[lenght], lenght, CL_FUNCSIG())
 
 #define CL_DELETE_ARR(pObjs)\
-CL::MemoryController::GetInstance().DeleteArr(pObjs, CL_FUNCSIG())
+delete[] CL::MemoryController::GetInstance().DeleteArr(pObjs, CL_FUNCSIG())
 
 #define CL_MALLOC(size)\
 CL::MemoryController::GetInstance().Malloc(size, CL_FUNCSIG())
@@ -36,20 +36,20 @@ CL::MemoryController::GetInstance().Free(pMem, CL_FUNCSIG())
 #define CL_PLACEMENT_NEW(mem, type, ...)\
 new(mem) type(__VA_ARGS__)
 
-#define CL_PLACEMENT_DELETE(pObj)\
-CL::MemoryController::PlacementDeleteImplementation(pObj)
+#define CL_PLACEMENT_DELETE(type, pObj)\
+(pObj)->~type()
 
 #define CL_NEW(type, ...)\
 new type(__VA_ARGS__)
 
 #define CL_DELETE(pObj)\
-delete pObj
+delete (pObj)
 
 #define CL_NEW_ARR(type, lenght)\
 new type[lenght]
 
 #define CL_DELETE_ARR(pObjs)\
-delete[] pObjs
+delete[] (pObjs)
 
 #define CL_MALLOC(size)\
 malloc(size)
@@ -96,11 +96,6 @@ namespace CL
 
 		CL_DELETE_COPY_OPERATORS(MemoryController)
 	public:
-		template <class ObjType>
-		static void PlacementDeleteImplementation(ObjType* pObj)
-		{
-			pObj->~ObjType();
-		}
 		static MemoryController& GetInstance();
 		template<class ObjType, class... Args>
 		ObjType* PlacementNew(void* pMem, ObjType* pObj, const char* pDebugStr)
@@ -109,10 +104,10 @@ namespace CL
 			return pObj;
 		}
 		template<class ObjType>
-		void PlacementDelete(ObjType* pObj, const char* pDebugStr)
+		ObjType* PlacementDelete(ObjType* pObj, const char* pDebugStr)
 		{
 			EraseControllSection(pObj, CL::EMemoryType::mem_placement_new, pDebugStr);
-			PlacementDeleteImplementation(pObj);
+			return pObj;
 		}
 		template<class ObjType>
 		ObjType* New(ObjType* pObj, const char* pDebugStr)
@@ -121,10 +116,10 @@ namespace CL
 			return pObj;
 		}
 		template<class ObjType>
-		void Delete(ObjType* pObj, const char* pDebugStr)
+		ObjType* Delete(ObjType* pObj, const char* pDebugStr)
 		{
 			EraseControllSection(pObj, CL::EMemoryType::mem_new, pDebugStr);
-			delete pObj;
+			return pObj;
 		}
 		template<class ObjType>
 		ObjType* NewArr(ObjType* pObjs, size_t Length, const char* pDebugStr)
@@ -133,10 +128,10 @@ namespace CL
 			return pObjs;
 		}
 		template<class ObjType>
-		void DeleteArr(ObjType* pObjs, const char* pDebugStr)
+		ObjType* DeleteArr(ObjType* pObjs, const char* pDebugStr)
 		{
 			EraseControllSection(pObjs, CL::EMemoryType::mem_new_array, pDebugStr);
-			delete[] pObjs;
+			return pObjs;
 		}
 		void* Malloc(size_t Size, const char* pDebugStr);
 		void Free(void* pMemory, const char* pDebugStr);

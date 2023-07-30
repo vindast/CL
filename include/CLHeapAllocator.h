@@ -250,7 +250,7 @@ namespace CL
 					{
 						MemControlBlock* pNextBlock = pBlock->pNextBlock;
 
-						CL_PLACEMENT_DELETE(pBlock);
+						CL_PLACEMENT_DELETE(MemControlBlock, pBlock);
 
 						pBlock = pNextBlock;
 					}
@@ -432,7 +432,7 @@ namespace CL
 				ValidateBlockNotInTree(pMergeBlock);
 				ValidateBlock(pTargetBlock, true, false);
 #endif 
-				CL_PLACEMENT_DELETE(pMergeBlock);
+				CL_PLACEMENT_DELETE(MemControlBlock, pMergeBlock);
 			}
 
 			if (pTargetBlock->pPreviosBlock && pTargetBlock->pPreviosBlock->bFree)
@@ -449,7 +449,7 @@ namespace CL
 				pMergeBlock->pNextBlock = pTargetBlock->pNextBlock; 
 				pMergeBlock->Size += sizeof(MemControlBlock) + pTargetBlock->Size;
 
-				CL_PLACEMENT_DELETE(pTargetBlock);
+				CL_PLACEMENT_DELETE(MemControlBlock, pTargetBlock);
 				pTargetBlock = pMergeBlock;
 
 #ifdef CL_DEBUG_BYTE_MEM_ALLOCATOR
@@ -476,7 +476,7 @@ namespace CL
 				CL_ASSERT(pMemData); 
 				_LookupTable.Erase(pMemData, pMemData->pData);
 
-				CL_PLACEMENT_DELETE(pTargetBlock);
+				CL_PLACEMENT_DELETE(MemControlBlock, pTargetBlock);
 
 				CL_FREE(pMemData);
 			} 

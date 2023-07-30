@@ -148,7 +148,7 @@ namespace CL
 				auto pCurrentNode = _pFirstUsedElement;
 				_pFirstUsedElement = _pFirstUsedElement->pNext;
 
-				CL_PLACEMENT_DELETE(&pCurrentNode->Obj);
+				CL_PLACEMENT_DELETE(ObjType, &pCurrentNode->Obj);
 			}
 		}
 
@@ -232,7 +232,7 @@ namespace CL
 #endif
 			} 
 
-			CL_PLACEMENT_NEW(pObj, ObjType, Forward(params)...);
+			CL_PLACEMENT_NEW(pObj, ObjType, params...);
 			return pObj;
 		}
 		void Free(ObjType* pObj)
@@ -249,7 +249,7 @@ namespace CL
 			__PoolElementsBlock<ObjType>* pNode = _LookUpTable.Find((char*)pObj, Compare);
 			CL_DEBUG_ASSERT(pNode);
 
-			CL_PLACEMENT_DELETE(pObj);
+			CL_PLACEMENT_DELETE(ObjType, pObj);
 
 			bool bIsFull = pNode->IsFull();
 			pNode->Free(pObj);
@@ -341,7 +341,7 @@ namespace CL
 #endif
 
 				_LookUpTable.Erase(pNode, (char*)pNode->Data());
-				CL_PLACEMENT_DELETE(pNode);
+				CL_PLACEMENT_DELETE(__PoolElementsBlock<ObjType>,pNode);
 				CL_FREE(pNode);
 			}
 
@@ -361,7 +361,7 @@ namespace CL
 			{
 				__PoolElementsBlock<ObjType>* pNodeToFree = pNode;
 				pNode = pNode->pNext;
-				CL_PLACEMENT_DELETE(pNodeToFree);
+				CL_PLACEMENT_DELETE(__PoolElementsBlock<ObjType>,pNodeToFree);
 				CL_FREE(pNodeToFree);
 			} 
 
@@ -371,7 +371,7 @@ namespace CL
 			{
 				__PoolElementsBlock<ObjType>* pNodeToFree = pNode;
 				pNode = pNode->pNext;
-				CL_PLACEMENT_DELETE(pNodeToFree);
+				CL_PLACEMENT_DELETE(__PoolElementsBlock<ObjType>,pNodeToFree);
 				CL_FREE(pNodeToFree);
 			}
 		}
