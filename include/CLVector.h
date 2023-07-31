@@ -273,11 +273,9 @@ namespace CL
 			if (Size)
 			{
 				Reserve(Size);
-
-				while (First <= Last)
+				for (size_t i = 0; i < Size; i++)
 				{
-					PushBack(*First);
-					First++;
+					PushBack(First[i]);
 				}
 			}
 
@@ -296,11 +294,9 @@ namespace CL
 				size_t Size = Last - First;
 
 				Reserve(Size);
-
-				while (First <= Last)
+				for (size_t i = 0; i < Size; i++)
 				{
-					PushBack(*First);
-					First++;
+					PushBack(First[i]);
 				}
 			}
 
