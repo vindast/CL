@@ -21,7 +21,7 @@ namespace CL
 			{
 				_pCurrentElement++;
 
-				if (_pCurrentElement > _pLastElement)
+				if (_pCurrentElement >= _pLastElement)
 				{
 					_pCurrentElement = nullptr;
 					_pLastElement = nullptr;
@@ -36,7 +36,7 @@ namespace CL
 			{
 				_pCurrentElement++;
 
-				if (_pCurrentElement > _pLastElement)
+				if (_pCurrentElement >= _pLastElement)
 				{
 					_pCurrentElement = nullptr;
 					_pLastElement = nullptr;
@@ -94,7 +94,7 @@ namespace CL
 			{
 				_pCurrentElement++;
 
-				if (_pCurrentElement > _pLastElement)
+				if (_pCurrentElement >= _pLastElement)
 				{
 					_pCurrentElement = nullptr;
 					_pLastElement = nullptr;
@@ -109,7 +109,7 @@ namespace CL
 			{
 				_pCurrentElement++;
 
-				if (_pCurrentElement > _pLastElement)
+				if (_pCurrentElement >= _pLastElement)
 				{
 					_pCurrentElement = nullptr;
 					_pLastElement = nullptr;
@@ -465,7 +465,7 @@ namespace CL
 		}
 		ForwardIterator begin()
 		{
-			return ForwardIterator(_pObjects, _pObjects + _nElement - 1);
+			return ForwardIterator(_pObjects, _pObjects + _nElement);
 		}
 		ForwardIterator end()
 		{
@@ -473,7 +473,7 @@ namespace CL
 		}
 		ConstForwardIterator begin() const
 		{
-			return ConstForwardIterator(_pObjects, _pObjects + _nElement - 1);
+			return ConstForwardIterator(_pObjects, _pObjects + _nElement);
 		}
 		ConstForwardIterator end() const
 		{
