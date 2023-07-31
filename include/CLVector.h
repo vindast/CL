@@ -370,7 +370,7 @@ namespace CL
 			{
 				if (bSwapBack)
 				{
-					if (std::is_move_constructible<Element>::value)
+					if constexpr (std::is_move_constructible<Element>::value)
 					{
 						_pObjects[Index] = Move(_pObjects[LastElementIndex]);
 					}
@@ -379,7 +379,7 @@ namespace CL
 						_pObjects[Index] = _pObjects[LastElementIndex];
 					}
 				}
-				else if (std::is_trivially_copyable<Element>::value)
+				else if constexpr (std::is_trivially_copyable<Element>::value)
 				{
 					memmove(_pObjects + Index, _pObjects + Index + 1, sizeof(Element) * (_nElement - Index - 1));
 				}
@@ -387,7 +387,7 @@ namespace CL
 				{
 					for (size_t i = Index; i < LastElementIndex; i++)
 					{
-						if (std::is_move_assignable<Element>::value)
+						if constexpr (std::is_move_assignable<Element>::value)
 						{
 							_pObjects[i] = Move(_pObjects[i + 1]);
 						}
@@ -499,7 +499,7 @@ namespace CL
 			{
 				for (size_t i = 0; i < _nElement; i++)
 				{
-					if (std::is_move_constructible<Element>::value)
+					if constexpr (std::is_move_constructible<Element>::value)
 					{
 						CL_PLACEMENT_NEW(pNewObjects + i, Element, CL::Move(_pObjects[i]));
 					}
