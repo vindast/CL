@@ -366,7 +366,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
-    <None Include="Engine.ini" />
     <None Include="main.cpp.vsspell">
       <DependentUpon>main.cpp</DependentUpon>
     </None>
