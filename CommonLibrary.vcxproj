@@ -268,7 +268,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="include\Barrier.cpp" />
-    <ClCompile Include="include\BinaryFile.cpp" />
+    <ClCompile Include="include\CLFile.cpp" />
     <ClCompile Include="include\BinaryList.cpp" />
     <ClCompile Include="include\CLAssert.cpp" />
     <ClCompile Include="include\CLCommon.cpp" />
@@ -305,7 +305,7 @@
     <ClInclude Include="include\CLAssert.h" />
     <ClInclude Include="include\AtomicBuffer.h" />
     <ClInclude Include="include\Barrier.h" />
-    <ClInclude Include="include\BinaryFile.h" />
+    <ClInclude Include="include\CLFile.h" />
     <ClInclude Include="include\BinaryList.h" />
     <ClInclude Include="include\Buffer.h" />
     <ClInclude Include="include\BufferAtomicIterator.h" />
