@@ -10,6 +10,11 @@ namespace CL
 	
 	bool File::Open(const String& Path, bool bRead, bool bWrite, bool bOverride)
 	{
+		if (_hFile != INVALID_HANDLE_VALUE)
+		{
+			return false;
+		}
+
 		_hFile = CreateFile(Path.CStr(),
 			(bWrite ? GENERIC_WRITE : 0) | (bRead ? GENERIC_READ : 0),
 			0,
