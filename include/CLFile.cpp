@@ -19,7 +19,7 @@ namespace CL
 			(bWrite ? GENERIC_WRITE : 0) | (bRead ? GENERIC_READ : 0),
 			0,
 			NULL,
-			bOverride ? CREATE_NEW : OPEN_EXISTING,
+			bOverride ? CREATE_ALWAYS : OPEN_EXISTING,
 			FILE_ATTRIBUTE_NORMAL,
 			NULL
 		);

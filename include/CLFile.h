@@ -22,7 +22,10 @@ namespace CL
 		{
 			uint64_t Size = Array.Size();
 			Write(&Size, sizeof(Size));
-			Write(Array.Data(), Size);
+			if (Size)
+			{
+				Write(Array.Data(), Size);
+			}
 		}
 		bool Read(void* pData, size_t Size);
 		template<class ObjectType>
