@@ -60,7 +60,7 @@ namespace CL
 		BOOL bErrorFlag = WriteFile(
 			_hFile,
 			pData,
-			sizeof(Size),
+			Size,
 			&dwBytesWritten,
 			NULL);
 
