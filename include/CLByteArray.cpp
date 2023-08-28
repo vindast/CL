@@ -87,7 +87,7 @@ namespace CL
 
 		if (_Size + Size > _Capacity)
 		{
-			Resize(CL_MAX(_Size + Size, _Capacity * 2 + 1), true);
+			Reserve(CL_MAX(_Size + Size, _Capacity * 2 + 1), true);
 		}
 
 		memcpy((char*)_pData + _Size, pData, Size);
@@ -96,6 +96,11 @@ namespace CL
 	
 	void ByteArray::ReadForward(void* pData, size_t Size)
 	{
+		if (!Size)
+		{
+			return;
+		}
+
 		CL_DEBUG_ASSERT(pData);
 		CL_DEBUG_ASSERT(Size);
 		CL_ASSERT(_Carriage + Size <= _Capacity);

@@ -67,7 +67,6 @@ namespace CL
 			uint64_t Size = 0;
 			ReadForward(&Size, sizeof(Size));
 			Other.Resize(Size);
-			Other._Size = Size;
 			ReadForward(Other.Data(), Size);
 			return *this;
 		}
