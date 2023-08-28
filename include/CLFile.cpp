@@ -83,6 +83,13 @@ namespace CL
 		return bErrorFlag != FALSE;
 	}
 
+	uint64_t File::GetLocation() const
+	{
+		long high_dword = 0;
+		DWORD low_dword = SetFilePointer(_hFile, 0, &high_dword, FILE_CURRENT);
+		return high_dword << 32 | uint64_t(low_dword);
+	}
+
 	bool File::Seek(size_t Position)
 	{
 		BOOL bErrorFlag = SetFilePointer(

@@ -40,6 +40,7 @@ namespace CL
 				Read(Array.Data(), Size);
 			}
 		}
+		uint64_t GetLocation() const;
 		bool Seek(size_t Position);
 		//TODO: eof
 		bool IsOpen() const { return _hFile != INVALID_HANDLE_VALUE; }
