@@ -40,27 +40,7 @@ namespace CL
 		_Carriage = Position;
 	}
 	
-	void ByteArray::Reserve(size_t NewSize, bool bKeepData)
-	{
-		void* pNewData = nullptr;
-
-		if (NewSize)
-		{
-			pNewData = CL_MALLOC(NewSize);
-
-			if (_pData && bKeepData)
-			{
-				memcpy(pNewData, _pData, CL_MIN(_Size, NewSize));
-			}
-		}
-
-		CL_FREE(_pData);
-		_Size = NewSize;
-		_Capacity = NewSize;
-		_pData = pNewData;
-	}
-	
-	void ByteArray::Resize(size_t NewCapacity, bool bKeepData)
+	void ByteArray::Reserve(size_t NewCapacity, bool bKeepData)
 	{
 		void* pNewData = nullptr;
 		_Size = CL_MIN(_Size, NewCapacity);
@@ -77,6 +57,26 @@ namespace CL
 
 		CL_FREE(_pData);
 		_Capacity = NewCapacity;
+		_pData = pNewData;
+	}
+
+	void ByteArray::Resize(size_t NewSize, bool bKeepData)
+	{
+		void* pNewData = nullptr;
+
+		if (NewSize)
+		{
+			pNewData = CL_MALLOC(NewSize);
+
+			if (_pData && bKeepData)
+			{
+				memcpy(pNewData, _pData, CL_MIN(_Size, NewSize));
+			}
+		}
+
+		CL_FREE(_pData);
+		_Size = NewSize;
+		_Capacity = NewSize;
 		_pData = pNewData;
 	}
 	
