@@ -147,7 +147,22 @@ namespace CL
 
 	String GetFileNameFromPath(String sFile, bool bEraseExtention)
 	{
-		size_t SlashIndex = sFile.FindLast("/");
+		size_t SlashIndex0 = sFile.FindLast("/");
+		size_t SlashIndex1 = sFile.FindLast("\\");
+		size_t SlashIndex = String::NullPos();
+
+		if (SlashIndex0 != String::NullPos() && SlashIndex1 != String::NullPos())
+		{
+			SlashIndex = CL_MAX(SlashIndex0, SlashIndex1);
+		}
+		else if (SlashIndex0 != String::NullPos())
+		{
+			SlashIndex = SlashIndex0;
+		}
+		else
+		{
+			SlashIndex = SlashIndex1;
+		}
 
 		if (SlashIndex != String::NullPos())
 		{

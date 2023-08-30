@@ -4,9 +4,13 @@
 #include <unordered_map>
 #include <Delegate.h>
 #include <CLString.h>
+#include <FilesSystem.h>
 
 int main(int argc, const char* argv[])
 {
+	std::cout << CL::GetFileNameFromPath("C:/repos/TEngine/GameProjects/NewEngineFunctionality/GameData/Asset/file.txt", false) << std::endl;
+	std::cout << CL::GetFileNameFromPath("C:\\repos\\TEngine\\GameProjects\\NewEngineFunctionality\\Assets\\OldCar.fbx", false) << std::endl;
+	return false;
 
 	CL::String std = CL::Forward(CL::String("sda"));
 
