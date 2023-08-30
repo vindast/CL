@@ -52,7 +52,7 @@ namespace CL
 	//Folder separator "/"
 	void CreateFolders(String sFolders);
 	bool GetLastFileWriteTime(const String& sFile, FileLastWriteTime& OutLastWriteTime);
-	String GetFileNameFromPath(String sFile);
+	String GetFileNameFromPath(String sFile, bool bEraseExtention = true);
 	String GetWorkingDirectory();
 
 	//Split Directory by "\\" or by "/" and return path as list

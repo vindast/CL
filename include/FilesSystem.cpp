@@ -145,20 +145,23 @@ namespace CL
 		return true;
 	}
 
-	String GetFileNameFromPath(String sFile)
+	String GetFileNameFromPath(String sFile, bool bEraseExtention)
 	{
-		size_t SlashIndex = sFile.FindFirst("/");
+		size_t SlashIndex = sFile.FindLast("/");
 
 		if (SlashIndex != String::NullPos())
 		{
 			sFile = sFile.Substring(SlashIndex + 1);
 		}
 
-		size_t PointIndex = sFile.FindLast(".");
-
-		if (PointIndex != String::NullPos())
+		if (bEraseExtention)
 		{
-			sFile = sFile.Substring(0, PointIndex);
+			size_t PointIndex = sFile.FindLast(".");
+
+			if (PointIndex != String::NullPos())
+			{
+				sFile = sFile.Substring(0, PointIndex);
+			}
 		}
 
 		return sFile;
