@@ -4,6 +4,15 @@
 
 namespace CL
 {
+	bool FileCopy(const CL::String& OriginalFilePath, const CL::String& NewFilePath, bool bOverrideIfExist)
+	{
+		return CopyFile(
+			OriginalFilePath.CStr(),
+			NewFilePath.CStr(),
+			!bOverrideIfExist
+		);
+	}
+
 	void EnumerateFilesInDirectory(String directory, List<String>& files)
 	{
 		WIN32_FIND_DATA FindFileData;

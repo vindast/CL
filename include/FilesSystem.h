@@ -43,6 +43,7 @@ namespace CL
 			|| A.Milliseconds != B.Milliseconds;
 	};
 
+	bool FileCopy(const CL::String& OriginalFilePath, const CL::String& NewFilePath, bool bOverrideIfExist = true);
 	void EnumerateFilesInDirectory(String directory, List<String>& files);
 	void EnumerateFilesInDirectory(String directory, CL::List<String>& files, const String& ext);
 	bool IsFileExist(const String& sFile);
