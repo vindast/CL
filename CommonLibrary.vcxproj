@@ -212,6 +212,7 @@
     <ClInclude Include="include\CLHeapAllocator.h" />
     <ClInclude Include="include\CLHeapRefAllocator.h" />
     <ClInclude Include="include\CLList.h" />
+    <ClInclude Include="include\CLLockPtr.h" />
     <ClInclude Include="include\CLMacroHelper.h" />
     <ClInclude Include="include\CLMemory.h" />
     <ClInclude Include="include\CLMemoryCommon.h" />
