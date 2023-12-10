@@ -129,6 +129,13 @@ namespace CL
 		}
 		List(const List& Other)
 		{
+			if (Other.IsEmpty())
+			{
+				return;
+			}
+
+			_pAllocator = CL::RefPtr<Pool<ListNode>>::MakeRefPtr(Other._pAllocator->GetElementsInBlock());
+
 			for (const auto& it : Other)
 			{
 				PushBack(it);
@@ -148,6 +155,14 @@ namespace CL
 		}
 		List& operator = (const List& Other)
 		{
+			if (Other.IsEmpty())
+			{
+				Clear();
+				return;
+			}
+
+			_pAllocator = CL::RefPtr<Pool<ListNode>>::MakeRefPtr(Other._pAllocator->GetElementsInBlock());
+
 			for (const auto& it : Other)
 			{
 				PushBack(it);
@@ -408,6 +423,7 @@ namespace CL
 		}
 		size_t size() const { return _nElementsCount; }
 		size_t GetElementsCount() const { return _nElementsCount; }
+		bool IsEmpty() const { return _nElementsCount == 0; }
 		void Clear()
 		{
 			while (_pFirst)

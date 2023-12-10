@@ -375,6 +375,10 @@ namespace CL
 				CL_FREE(pNodeToFree);
 			}
 		}
+		size_t GetElementsInBlock() const
+		{
+			return _ElementsInBlockCount;
+		}
 	private:
 		Pool<ObjType>& operator = (const Pool<ObjType>&) = delete;
 		Pool<ObjType>(const Pool<ObjType>&) = delete;
