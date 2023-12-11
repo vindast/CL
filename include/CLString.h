@@ -330,6 +330,43 @@ namespace CL
 
 			return *this;
 		}
+		String& operator += (char C)
+		{
+			size_t SourceLength = 1;
+			size_t NewLength = _nLength + SourceLength;
+
+			if (NewLength < sizeof(_sbStr))
+			{
+				_sbStr.mStr[_nLength] = C;
+			}
+			else
+			{
+				size_t NewCapacity = CL_STRING_CAPACITY(NewLength);
+
+				if (GetCapacity() < NewCapacity)
+				{
+					char* pNewBuffer = (char*)CL_MALLOC(NewCapacity);
+					memcpy(pNewBuffer, GetData(), _nLength);
+					pNewBuffer[_nLength] = C;
+
+					if (!IsSmallBufferUsed())
+					{
+						CL_FREE(_heapStr._pStr);
+					}
+
+					_heapStr._pStr = pNewBuffer;
+					_heapStr._nCapacity = NewCapacity;
+				}
+				else
+				{
+					_heapStr._pStr[_nLength] = C;
+				}
+			}
+
+			_nLength = NewLength;
+
+			return *this;
+		}
 		bool operator == (const char* pStr) const
 		{
 			size_t StrLength = strlen(pStr);
