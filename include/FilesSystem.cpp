@@ -212,4 +212,95 @@ namespace CL
 
 		return Path;
 	}
+
+	void EnumerateFileAndFolders(
+		const CL::String& Path,
+		CL::List<CL::FDPath>& DirrectoriesAndFiles,
+		const CL::List<CL::String>& FileExts,
+		const CL::List<CL::String>& IgnoreFolders,
+		bool bScanDirectoryes, bool bScanFiles
+	)
+	{
+		if (!bScanDirectoryes && !bScanFiles)
+		{
+			return;
+		}
+
+		WIN32_FIND_DATA FindFileData;
+		HANDLE hf;
+
+		hf = FindFirstFile((Path + "*").CStr(), &FindFileData);
+
+		if (hf != INVALID_HANDLE_VALUE)
+		{
+			do {
+
+				if (lstrcmp(FindFileData.cFileName, ".") != 0 && lstrcmp(FindFileData.cFileName, "..") != 0)
+				{
+					if (!(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
+					{
+						if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+						{
+							if (bScanDirectoryes && !IsInList(IgnoreFolders, FindFileData.cFileName))
+							{
+								CL::FDPath f;
+								f.Path = Path + FindFileData.cFileName;
+								f.bIsFile = false;
+								DirrectoriesAndFiles.PushBack(f);
+							}
+						}
+						else if (bScanFiles)
+						{
+							CL::String Name = CL::String(FindFileData.cFileName);
+							CL::String Ext = Name.Substring(Name.FindFirst('.') + 1);
+
+							if (FileExts.IsEmpty() || IsInList(FileExts, Ext))
+							{
+								CL::FDPath f;
+								f.Path = Path + FindFileData.cFileName;
+								f.bIsFile = true;
+								DirrectoriesAndFiles.PushBack(f);
+							}
+						}
+					}
+				}
+
+
+			} while (FindNextFile(hf, &FindFileData) != 0);
+
+			FindClose(hf);
+		}
+	}
+
+	void RecursiveScanDirectory(
+		const CL::String& Path, CL::List<CL::FDPath>& DirrectoriesAndFiles,
+		const CL::List<CL::String>& FileExts,
+		const CL::List<CL::String>& IgnoreFolders,
+		bool bScanDirectoryes, bool bScanFiles
+	)
+	{
+		if (!bScanDirectoryes && !bScanFiles)
+		{
+			return;
+		}
+
+		CL::List<CL::FDPath> TmpDirectoryesAndFiles;
+		EnumerateFileAndFolders(Path, TmpDirectoryesAndFiles, FileExts, IgnoreFolders, true, bScanFiles);
+
+		for (const CL::FDPath& FD : TmpDirectoryesAndFiles)
+		{
+			if (!FD.bIsFile)
+			{
+				RecursiveScanDirectory(FD.Path + "\\", TmpDirectoryesAndFiles, FileExts, IgnoreFolders, true, bScanFiles);
+			}
+		}
+
+		for (const CL::FDPath& FD : TmpDirectoryesAndFiles)
+		{
+			if (FD.bIsFile && bScanFiles || !FD.bIsFile && bScanDirectoryes)
+			{
+				DirrectoriesAndFiles.PushFront(FD);
+			}
+		}
+	}
 }

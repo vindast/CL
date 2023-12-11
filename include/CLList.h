@@ -448,4 +448,18 @@ namespace CL
 		ListNode* _pLast;
 		size_t _nElementsCount;
 	};
+
+	template<class TypeA, class TypeB>
+	bool IsInList(const CL::List<TypeA>& InList, const TypeB& Value)
+	{
+		for (const TypeA& Obj : InList)
+		{
+			if (Obj == Value)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
 }

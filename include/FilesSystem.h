@@ -57,4 +57,19 @@ namespace CL
 
 	//Split Directory by "\\" or by "/" and return path as list
 	CL::List<CL::String> ExtractPath(CL::String Directory);
+
+	void EnumerateFileAndFolders(
+		const CL::String& Path,
+		CL::List<CL::FDPath>& DirrectoriesAndFiles,
+		const CL::List<CL::String>& FileExts,
+		const CL::List<CL::String>& IgnoreFolders = CL::List<CL::String>(),
+		bool bScanDirectoryes = true, bool bScanFiles = true
+	);
+
+	void RecursiveScanDirectory(
+		const CL::String& Path, CL::List<CL::FDPath>& DirrectoriesAndFiles,
+		const CL::List<CL::String>& FileExts,
+		const CL::List<CL::String>& IgnoreFolders = CL::List<CL::String>(),
+		bool bScanDirectoryes = true, bool bScanFiles = true
+	);
 };
