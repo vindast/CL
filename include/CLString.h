@@ -338,6 +338,7 @@ namespace CL
 			if (NewLength < sizeof(_sbStr))
 			{
 				_sbStr.mStr[_nLength] = C;
+				_sbStr.mStr[_nLength + 1] = '\0';
 			}
 			else
 			{
@@ -348,6 +349,7 @@ namespace CL
 					char* pNewBuffer = (char*)CL_MALLOC(NewCapacity);
 					memcpy(pNewBuffer, GetData(), _nLength);
 					pNewBuffer[_nLength] = C;
+					pNewBuffer[_nLength + 1] = '\0';
 
 					if (!IsSmallBufferUsed())
 					{
@@ -360,6 +362,7 @@ namespace CL
 				else
 				{
 					_heapStr._pStr[_nLength] = C;
+					_heapStr._pStr[_nLength + 1] = '\0';
 				}
 			}
 
