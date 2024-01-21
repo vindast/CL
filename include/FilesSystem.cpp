@@ -303,4 +303,9 @@ namespace CL
 			}
 		}
 	}
+
+	bool RenameFileOrDirectrory(const CL::String& ExistingPath, const CL::String& NewPath)
+	{
+		return MoveFile(ExistingPath.CStr(), NewPath.CStr());
+	}
 }

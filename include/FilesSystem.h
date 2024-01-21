@@ -4,6 +4,9 @@
 
 namespace CL
 {
+	//ToDo CL will use only / separator for directories, function and assertations must be added to validate this
+	//ToDo CL::List<CL::FDPath> must be a struct with methods to restore path as string and etc.
+
 	struct FDPath
 	{
 		CL::String Path;
@@ -66,10 +69,13 @@ namespace CL
 		bool bScanDirectoryes = true, bool bScanFiles = true
 	);
 
+	//ToDo use hash set for ignoring folder
 	void RecursiveScanDirectory(
 		const CL::String& Path, CL::List<CL::FDPath>& DirrectoriesAndFiles,
 		const CL::List<CL::String>& FileExts,
 		const CL::List<CL::String>& IgnoreFolders = CL::List<CL::String>(),
 		bool bScanDirectoryes = true, bool bScanFiles = true
 	);
+
+	bool RenameFileOrDirectrory(const CL::String& ExistingPath, const CL::String& NewPath);
 };
