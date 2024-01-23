@@ -517,6 +517,31 @@ namespace CL
 
 			return NullPos();
 		}
+		size_t FindLast(char SimbolToFind, size_t Offset = 0) const
+		{
+			if (Offset < _nLength)
+			{
+				const char* pFirst = GetData();
+				const char* pTarget = pFirst + _nLength - Offset - 1;
+
+				if (pFirst > pTarget)
+				{
+					return NullPos();
+				}
+
+				while (pTarget != pFirst)
+				{
+					if (*pTarget == SimbolToFind)
+					{
+						return pTarget - GetData();
+					}
+
+					pTarget--;
+				}
+			}
+
+			return NullPos();
+		}
 		size_t FindFirst(char c, size_t Offset = 0) const
 		{
 			if (Offset < _nLength)
