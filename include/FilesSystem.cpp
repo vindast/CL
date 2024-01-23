@@ -291,7 +291,7 @@ namespace CL
 		{
 			if (!FD.bIsFile)
 			{
-				RecursiveScanDirectory(FD.Path + "\\", TmpDirectoryesAndFiles, FileExts, IgnoreFolders, true, bScanFiles);
+				RecursiveScanDirectory(FD.Path + "/", TmpDirectoryesAndFiles, FileExts, IgnoreFolders, true, bScanFiles);
 			}
 		}
 
