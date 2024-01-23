@@ -252,7 +252,7 @@ namespace CL
 						else if (bScanFiles)
 						{
 							CL::String Name = CL::String(FindFileData.cFileName);
-							CL::String Ext = Name.Substring(Name.FindFirst('.') + 1);
+							CL::String Ext = Name.Substring(Name.FindLast('.') + 1);
 
 							if (FileExts.IsEmpty() || IsInList(FileExts, Ext))
 							{
