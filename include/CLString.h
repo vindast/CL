@@ -33,6 +33,22 @@ namespace CL
 		{
 			_sbStr.mStr[0] = '\0';
 		}
+		String(char C) noexcept
+		{
+			_sbStr.mStr[0] = C;
+			_sbStr.mStr[1] = '\0';
+			_nLength = 1;
+		}
+		String& operator = (char C)
+		{
+			Clear();
+
+			_sbStr.mStr[0] = C;
+			_sbStr.mStr[1] = '\0';
+			_nLength = 1;
+
+			return *this;
+		}
 		/*template<size_t N>
 		String(const char(&mStr)[N])
 		{
@@ -370,10 +386,23 @@ namespace CL
 
 			return *this;
 		}
+		bool operator == (char C) const
+		{
+			return _nLength == 1 ? _sbStr.mStr[0] == C : false;
+		}
+		bool operator != (char C) const
+		{
+			return _nLength == 1 ? _sbStr.mStr[0] != C : true;
+		}
 		bool operator == (const char* pStr) const
 		{
 			size_t StrLength = strlen(pStr);
 			return StrLength == _nLength ? memcmp(pStr, GetData(), _nLength) == 0: false;
+		}
+		bool operator != (const char* pStr) const
+		{
+			size_t StrLength = strlen(pStr);
+			return StrLength == _nLength ? memcmp(pStr, GetData(), _nLength) != 0 : false;
 		}
 		bool operator == (const String& str) const
 		{
