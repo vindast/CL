@@ -459,7 +459,7 @@ namespace CL
 		}
 		size_t FindFirst(const char* pStrToSearch, size_t Offset = 0) const
 		{
-			if (Offset < _nLength)
+			if (Offset < _nLength && pStrToSearch)
 			{
 				const char* pSearchSource = pStrToSearch;
 				const char* pTarget = GetData() + Offset;
@@ -489,7 +489,7 @@ namespace CL
 		}
 		size_t FindLast(const char* pStrToSearch, size_t Offset = 0) const
 		{
-			if (Offset < _nLength)
+			if (Offset < _nLength && pStrToSearch)
 			{
 				const char* pSearchSource = pStrToSearch;
 				const char* pTarget = GetData() + _nLength - Offset - 1;
