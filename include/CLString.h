@@ -402,7 +402,7 @@ namespace CL
 		bool operator != (const char* pStr) const
 		{
 			size_t StrLength = strlen(pStr);
-			return StrLength == _nLength ? memcmp(pStr, GetData(), _nLength) != 0 : false;
+			return StrLength == _nLength ? memcmp(pStr, GetData(), _nLength) != 0 : true;
 		}
 		bool operator == (const String& str) const
 		{
