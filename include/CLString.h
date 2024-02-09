@@ -6,6 +6,7 @@
 #define CL_STR_BIN_ALIGNMENT 4
 #endif
 
+#define CL_STRING_TERMINATOR '\0'
 #define CL_STRING_CAPACITY(Length) CL_ALIGN_BIN_2((Length) + 1, CL_STR_BIN_ALIGNMENT)
 
 namespace CL
@@ -31,12 +32,12 @@ namespace CL
 	public:
 		String() noexcept
 		{
-			_sbStr.mStr[0] = '\0';
+			_sbStr.mStr[0] = CL_STRING_TERMINATOR;
 		}
 		String(char C) noexcept
 		{
 			_sbStr.mStr[0] = C;
-			_sbStr.mStr[1] = '\0';
+			_sbStr.mStr[1] = CL_STRING_TERMINATOR;
 			_nLength = 1;
 		}
 		String& operator = (char C)
@@ -44,7 +45,7 @@ namespace CL
 			Clear();
 
 			_sbStr.mStr[0] = C;
-			_sbStr.mStr[1] = '\0';
+			_sbStr.mStr[1] = CL_STRING_TERMINATOR;
 			_nLength = 1;
 
 			return *this;
@@ -92,14 +93,14 @@ namespace CL
 			if (IsSmallBufferUsed())
 			{
 				memcpy(_sbStr.mStr, pStr, _nLength);
-				_sbStr.mStr[_nLength] = '\0';
+				_sbStr.mStr[_nLength] = CL_STRING_TERMINATOR;
 			}
 			else
 			{
 				_heapStr._nCapacity = CL_STRING_CAPACITY(_nLength);
 				_heapStr._pStr = (char*)CL_MALLOC(_heapStr._nCapacity);
 				memcpy(_heapStr._pStr, pStr, _nLength);
-				_heapStr._pStr[_nLength] = '\0';
+				_heapStr._pStr[_nLength] = CL_STRING_TERMINATOR;
 			}
 		}
 		String(const char* pStr)
@@ -354,7 +355,7 @@ namespace CL
 			if (NewLength < sizeof(_sbStr))
 			{
 				_sbStr.mStr[_nLength] = C;
-				_sbStr.mStr[_nLength + 1] = '\0';
+				_sbStr.mStr[_nLength + 1] = CL_STRING_TERMINATOR;
 			}
 			else
 			{
@@ -365,7 +366,7 @@ namespace CL
 					char* pNewBuffer = (char*)CL_MALLOC(NewCapacity);
 					memcpy(pNewBuffer, GetData(), _nLength);
 					pNewBuffer[_nLength] = C;
-					pNewBuffer[_nLength + 1] = '\0';
+					pNewBuffer[_nLength + 1] = CL_STRING_TERMINATOR;
 
 					if (!IsSmallBufferUsed())
 					{
@@ -378,7 +379,7 @@ namespace CL
 				else
 				{
 					_heapStr._pStr[_nLength] = C;
-					_heapStr._pStr[_nLength + 1] = '\0';
+					_heapStr._pStr[_nLength + 1] = CL_STRING_TERMINATOR;
 				}
 			}
 
@@ -429,7 +430,7 @@ namespace CL
 			if(NewSize < GetCapacity())
 			{
 				_nLength = NewSize;
-				GetData()[_nLength] = '\0';
+				GetData()[_nLength] = CL_STRING_TERMINATOR;
 
 				if (bFill)
 				{
@@ -474,7 +475,7 @@ namespace CL
 					memset(GetData(), i, NewSize);
 				}
 
-				pNewBuffer[NewSize] = '\0';
+				pNewBuffer[NewSize] = CL_STRING_TERMINATOR;
 				
 				if (!IsSmallBufferUsed())
 				{
@@ -503,7 +504,7 @@ namespace CL
 						pSearchSource++;
 						pLocalCmpString++;
 
-						if (*pSearchSource == '\0')
+						if (*pSearchSource == CL_STRING_TERMINATOR)
 						{
 							return pTarget - GetData();
 						}
@@ -514,6 +515,37 @@ namespace CL
 				}
 			}
 			
+			return NullPos();
+		}
+		size_t FindFirst(const CL::String& StrToSearch, size_t Offset = 0) const
+		{
+			if (Offset < _nLength && !StrToSearch.IsEmpty())
+			{
+				const char* pStrToSearch = StrToSearch.CStr();
+				const char* pSearchSource = pStrToSearch;
+				const char* pTarget = GetData() + Offset;
+				const char* pLast = GetData() + _nLength;
+
+				while (pTarget != pLast)
+				{
+					const char* pLocalCmpString = pTarget;
+
+					while (*pLocalCmpString == *pSearchSource && pLocalCmpString != pLast)
+					{
+						pSearchSource++;
+						pLocalCmpString++;
+
+						if (*pSearchSource == CL_STRING_TERMINATOR)
+						{
+							return pTarget - GetData();
+						}
+					}
+
+					pSearchSource = pStrToSearch;
+					pTarget++;
+				}
+			}
+
 			return NullPos();
 		}
 		size_t FindLast(const char* pStrToSearch, size_t Offset = 0) const
@@ -533,7 +565,38 @@ namespace CL
 						pSearchSource++;
 						pLocalCmpString++;
 
-						if (*pSearchSource == '\0')
+						if (*pSearchSource == CL_STRING_TERMINATOR)
+						{
+							return pTarget - GetData();
+						}
+					}
+
+					pSearchSource = pStrToSearch;
+					pTarget--;
+				}
+			}
+
+			return NullPos();
+		}
+		size_t FindLast(const CL::String& StrToSearch, size_t Offset = 0) const
+		{
+			if (Offset < _nLength && !StrToSearch.IsEmpty())
+			{
+				const char* pStrToSearch = StrToSearch.CStr();
+				const char* pSearchSource = pStrToSearch;
+				const char* pTarget = GetData() + _nLength - Offset - 1;
+				const char* pLast = GetData();
+
+				while (pTarget != pLast)
+				{
+					const char* pLocalCmpString = pTarget;
+
+					while (*pLocalCmpString == *pSearchSource && pLocalCmpString != pLast)
+					{
+						pSearchSource++;
+						pLocalCmpString++;
+
+						if (*pSearchSource == CL_STRING_TERMINATOR)
 						{
 							return pTarget - GetData();
 						}
@@ -611,15 +674,16 @@ namespace CL
 		void Clear()
 		{
 			ClearHeapFromNewSize(0);
-			_sbStr.mStr[0] = '\0';
+			_sbStr.mStr[0] = CL_STRING_TERMINATOR;
 			_nLength = 0;
 		}
 		void clear()
 		{
 			ClearHeapFromNewSize(0);
-			_sbStr.mStr[0] = '\0';
+			_sbStr.mStr[0] = CL_STRING_TERMINATOR;
 			_nLength = 0;
 		}
+		bool IsEmpty() const { return _nLength == 0; }
 		constexpr static size_t NullPos() { return SIZE_MAX; }
 		~String()
 		{
@@ -668,7 +732,7 @@ namespace CL
 		{
 			memcpy(str._sbStr.mStr, left.GetData(), left._nLength);
 			memcpy(&str._sbStr.mStr[left._nLength], right.GetData(), right._nLength);
-			str._sbStr.mStr[str._nLength] = '\0';
+			str._sbStr.mStr[str._nLength] = CL_STRING_TERMINATOR;
 		}
 		else
 		{
@@ -677,7 +741,7 @@ namespace CL
 			str._heapStr._pStr = (char*)CL_MALLOC(NewCapacity);
 			memcpy(str._heapStr._pStr, left.GetData(), left._nLength);
 			memcpy(&str._heapStr._pStr[left._nLength], right.GetData(), right._nLength);
-			str._heapStr._pStr[str._nLength] = '\0';
+			str._heapStr._pStr[str._nLength] = CL_STRING_TERMINATOR;
 		}
 
 		return str;
@@ -688,4 +752,14 @@ namespace CL
 		left += right;
 		return left;
 	}
+}
+
+static std::ostream& operator << (std::ostream& os, const CL::String& Str)
+{
+	if (!Str.IsEmpty())
+	{
+		os << Str.CStr();
+	}
+
+	return os;
 }
