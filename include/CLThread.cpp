@@ -6,6 +6,11 @@ typedef HRESULT(WINAPI* TSetThreadDescription)(HANDLE, PCWSTR);
 
 namespace CL
 {
+    unsigned long GetCurrentThreadId()
+    {
+        return ::GetCurrentThreadId();
+    }
+
     ThreadLowLevel::ThreadLowLevel() : _hThread(NULL), _bIsSuspended(false)
     {
 

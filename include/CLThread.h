@@ -3,6 +3,8 @@
 
 namespace CL
 {
+    unsigned long GetCurrentThreadId();
+
     class ThreadLowLevel
     {
         typedef unsigned long(__stdcall* ThreadFunctionPtr)(void* pData);
