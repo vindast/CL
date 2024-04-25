@@ -6,7 +6,7 @@
 #include <CLEmbeddedArray.h>
 #include <CLVector.h>
 
-#define CL_HASH_MAP_LOAD_FACTOR 0.85
+#define CL_HASH_MAP_LOAD_FACTOR 0.75
 
 // #TODO CLConfig
 #define CL_ENABLE_PROBING_INSERT 0
@@ -19,16 +19,10 @@
 #define CL_HASH_MAP_REHASH_SIZE_MULTIPLIER 2
 #endif
 
-// #TODO CLConfig
-#define CL_HASH_MAP_ENABLE_COLLISION_RESOLVE 1
-//#define CL_PARANOIDAL_DEBUG 1
-
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 #define CL_HASH_MAP_MAX_COLLISIONS 4
 #define CL_HASH_MAP_MAX_REHASH_POOL_SIZE 16
-#endif
 
-#if CL_PARANOIDAL_DEBUG && CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+#if CL_PARANOIDAL_DEBUG 
 #ifndef CL_HASH_MAP_DEBUG
 #define CL_HASH_MAP_DEBUG 1
 #endif
@@ -74,17 +68,12 @@ namespace CL
 	{
 		Bucket()
 		{
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
-		//	memset(Pairs, 0, sizeof(HashMapPair) * CL_HASH_MAP_MAX_COLLISIONS);
-
 			for (size_t I = 0; I < 4; I++)
 			{
 				Pairs[I] = nullptr;
 			}
-#endif
 		}
 
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 		size_t NumPairs = 0;
 #if CL_HASH_MAP_USE_KEY_ARRAY
 		KeyType Hashes[CL_HASH_MAP_MAX_COLLISIONS];
@@ -146,10 +135,6 @@ namespace CL
 		}
 		bool IsAbleToInsert() const { return NumPairs < CL_HASH_MAP_MAX_COLLISIONS; }
 		bool IsEmpty() const { return NumPairs == 0; }
-
-#else
-		HashMapPair Pair;
-#endif
 		
 		Bucket* pNext = nullptr;
 		Bucket* pPrevious = nullptr;
@@ -163,23 +148,14 @@ namespace CL
 		friend class HashMap;
 	public:
 		HashMapIterator() : _pBucket(nullptr)
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 			, _Index(0)
-#endif
 		{
 
 		}
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 		HashMapIterator(BucketType* pBucket, size_t Index) : _pBucket(pBucket), _Index(Index)
 		{
 
 		}
-#else
-		HashMapIterator(BucketType* pBucket) : _pBucket(pBucket)
-		{
-
-		}
-#endif	
 		Iterator& operator++(int)
 		{
 			Inc();
@@ -193,7 +169,6 @@ namespace CL
 		void Inc()
 		{
 			CL_DEBUG_ASSERT(_pBucket);
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 			CL_DEBUG_ASSERT(_Index < _pBucket->NumPairs);
 			_Index++;
 			if (_Index >= _pBucket->NumPairs)
@@ -201,61 +176,38 @@ namespace CL
 				_Index = 0;
 				_pBucket = _pBucket->pNext;
 		}
-#else
-			_pBucket = _pBucket->pNext;
-#endif
+
 		}
 		ObjType& operator*()
 		{
 			CL_DEBUG_ASSERT(_pBucket);
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
 			return *_pBucket->Pairs[_Index];
-#else
-			return _pBucket->Pair;
-#endif
 		}
 		ObjType& operator ()()
 		{
 			CL_DEBUG_ASSERT(_pBucket);
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
 			return *_pBucket->Pairs[_Index];
-#else
-			return _pBucket->Pair;
-#endif
 		}
 		const KeyType& GetKey()
 		{
 			CL_DEBUG_ASSERT(_pBucket);
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
 			return _pBucket->Pairs[_Index]->Key;
-#else
-			return _pBucket->Pair.Key;
-#endif
 		}
 		ValueType& GetValue()
 		{
 			CL_DEBUG_ASSERT(_pBucket);
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
 			return _pBucket->Pairs[_Index]->Value;
-#else
-			return _pBucket->Pair.Value;
-#endif
 		}
 		const ValueType& GetValue() const
 		{
 			CL_DEBUG_ASSERT(_pBucket);
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
 			return _pBucket->Pairs[_Index]->Value;
-#else
-			return _pBucket->Pair.Value;
-#endif
 		}
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 		operator bool() const
 		{
 			return _pBucket && _Index < _pBucket->NumPairs;
@@ -269,46 +221,23 @@ namespace CL
 			return _pBucket != other._pBucket || (_pBucket ? _Index != other._Index : false);
 		}
 		size_t GetIndex() const { return _Index; }
-#else
-		operator bool() const
-		{
-			return _pBucket;
-		}
-		bool operator == (const Iterator& other) const
-		{
-			return _pBucket == other._pBucket;
-		}
-		bool operator != (const Iterator& other) const
-		{
-			return _pBucket != other._pBucket;
-		}
-#endif
 		const BucketType* GetBucket() const { return _pBucket; }
 	private:
 		BucketType* _pBucket;
-
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 		size_t _Index;
-#endif
 	};
 
 	class HashMap
 	{
 	public:
 		HashMap() : _Bucket(32)
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
-			, _Pairs(64)
-#endif
+			, _Pairs(32)
 		{
-			_HashMap.Resize(64, nullptr);
+			_HashMap.Resize(32, nullptr);
 		}
 		HashMapIterator begin()
 		{
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 			return HashMapIterator(_pFirstBucket, 0);
-#else
-			return HashMapIterator(_pFirstBucket);
-#endif
 		}
 		HashMapIterator end()
 		{
@@ -318,11 +247,6 @@ namespace CL
 		{
 			const size_t Hash = std::hash<size_t>{}(Key);
 			size_t Index = Hash % _HashMap.GetSize();
-#if CL_ENABLE_PROBING_INSERT
-			Bucket* pBucket = ProbingSearch(Index, Key);
-			return HashMapIterator(pBucket);
-#else
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 			Bucket* pBucket = _HashMap[Index];
 			if (pBucket)
 			{
@@ -331,7 +255,6 @@ namespace CL
 #else
 				Index = pBucket->FindPair(Key, Hash);
 #endif	
-
 				if (Index < CL_HASH_MAP_MAX_COLLISIONS)
 				{
 					return HashMapIterator(pBucket, Index);
@@ -339,25 +262,13 @@ namespace CL
 			}
 
 			return HashMapIterator();
-#else
-			Bucket* pBucket = _HashMap[Index];
-			return HashMapIterator(pBucket);
-#endif
-#endif
 		}
 		HashMapIterator Erase(HashMapIterator It)
 		{
-
-#if CL_ENABLE_PROBING_INSERT
-			const size_t Index = It().Hash % _HashMap.GetSize();
-			Bucket* pBucket = ProbingSearch(Index, It.GetKey());
-#else
 			Bucket* pBucket = It._pBucket;
-#endif
 
 			if (pBucket)
 			{
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 				const size_t Hash = It().Hash;
 				pBucket->Erase(It.GetIndex(), _Pairs);
 				_NumElemetns--;
@@ -391,30 +302,6 @@ namespace CL
 				{
 					return It ? It : HashMapIterator(pBucket->pNext, 0);
 				}
-#else
-				Bucket* pNextBucket = pBucket->pNext;
-
-				if (pBucket->pNext)
-				{
-					pBucket->pNext->pPrevious = pBucket->pPrevious;
-				}
-
-				if (pBucket->pPrevious)
-				{
-					pBucket->pPrevious->pNext = pBucket->pNext;
-				}
-
-				if (_pFirstBucket == pBucket)
-				{
-					_pFirstBucket = pBucket->pNext;
-				}
-
-				_Bucket.Free(pBucket);
-				_HashMap[Index] = nullptr;
-				_NumBuckets--;
-				_NumElemetns--;
-				return HashMapIterator(pNextBucket);
-#endif
 			}
 
 			return HashMapIterator();
@@ -423,24 +310,11 @@ namespace CL
 		{
 			size_t Hash = std::hash<size_t>{}(InPair.Key);
 			size_t Index = Hash % _HashMap.GetSize();
-#if CL_ENABLE_PROBING_INSERT
-			Bucket* pBucket = ProbingSearch(Index, InPair.Key);
-#else
 			Bucket* pBucket = _HashMap[Index];
-#endif
-
-#if CL_ENABLE_PROBING_INSERT
-			if (pBucket)
-#else
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 #if CL_HASH_MAP_USE_KEY_ARRAY
 			if (pBucket && pBucket->FindPair(InPair.Key) < CL_HASH_MAP_MAX_COLLISIONS)
 #else
 			if (pBucket && pBucket->FindPair(InPair.Key, Hash) < CL_HASH_MAP_MAX_COLLISIONS)
-#endif
-#else
-			if (pBucket && pBucket->Pair.Key == InPair.Key)
-#endif
 #endif
 			{
 				return false;
@@ -452,30 +326,14 @@ namespace CL
 				Index = Hash % _HashMap.GetSize();
 			}
 
-#if CL_ENABLE_PROBING_INSERT
-			Index = ProbingInsert(Index);
-#endif
-
-#if CL_ENABLE_PROBING_INSERT
-			while (Index == -1)
-#else
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
-			while (_HashMap[Index] && !_HashMap[Index]->IsAbleToInsert())
-#else
-			while (_HashMap[Index])
-#endif
-#endif
+			Bucket* pNewBucket = _HashMap[Index];
+			while (pNewBucket && !pNewBucket->IsAbleToInsert())
 			{
 				ReHash();
-#if CL_ENABLE_PROBING_INSERT
-				Index = ProbingInsert(Hash % _HashMap.GetSize());
-#else
 				Index = Hash % _HashMap.GetSize();
-#endif
+				pNewBucket = _HashMap[Index];
 			}
 
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
-			Bucket* pNewBucket = _HashMap[Index];
 			if (!pNewBucket)
 			{
 				pNewBucket = _Bucket.Alloc();
@@ -494,22 +352,6 @@ namespace CL
 			HashMapPair* pPair = _Pairs.Alloc(InPair);
 			pPair->Hash = Hash;
 			pNewBucket->Insert(pPair);
-#else
-			Bucket* pNewBucket = _Bucket.Alloc();
-			_NumBuckets++;
-			pNewBucket->pNext = _pFirstBucket;
-
-			if (_pFirstBucket)
-			{
-				_pFirstBucket->pPrevious = pNewBucket;
-			}
-
-			_pFirstBucket = pNewBucket;
-			_HashMap[Index] = pNewBucket;
-
-			pNewBucket->Pair = InPair;
-			pNewBucket->Pair.Hash = Hash;
-#endif
 
 			_NumElemetns++;
 
@@ -521,7 +363,23 @@ namespace CL
 		}
 		void Clean()
 		{
+			_HashMap.Clear();
 
+			while (_pFirstBucket)
+			{
+				for (size_t I = 0; I < _pFirstBucket->NumPairs; I++)
+				{
+					_Pairs.Free(_pFirstBucket->Pairs[I]);
+				}
+
+				Bucket* pOldBucket = _pFirstBucket;
+				_pFirstBucket = _pFirstBucket->pNext;
+				_Bucket.Free(pOldBucket);
+			}
+
+			_pFirstBucket = nullptr;
+			_NumElemetns = 0;
+			_NumBuckets = 0;
 		}
 		~HashMap()
 		{
@@ -570,19 +428,12 @@ namespace CL
 
 			Bucket* pBucket = _pFirstBucket;
 
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 			_pFirstBucket = nullptr;
 			Bucket* mBucketPool[CL_HASH_MAP_MAX_REHASH_POOL_SIZE];
 			size_t PoolSize = 0;
-#endif
 
 			while (pBucket)
 			{
-#if CL_ENABLE_PROBING_INSERT
-				const size_t Index = ProbingInsert(pBucket->Pair.Hash % _HashMap.GetSize());
-				_HashMap[Index] = pBucket;
-#else
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 // #TODO optimize
 				for (size_t I = 0; I < pBucket->NumPairs; I++)
 				{
@@ -621,19 +472,8 @@ namespace CL
 					}
 				}
 
-				pBucket->NumPairs = 0;
-#else
-				const size_t Index = pBucket->Pair.Hash % _HashMap.GetSize(); 
-				CL_DEBUG_ASSERT(!_HashMap[Index]);
-				_HashMap[Index] = pBucket;
-#endif
-#endif			
-
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 				Bucket* pOldBucket = pBucket;
-#endif
 				pBucket = pBucket->pNext;
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 
 				if (PoolSize < CL_HASH_MAP_MAX_REHASH_POOL_SIZE)
 				{
@@ -648,17 +488,14 @@ namespace CL
 				}
 				
 				_NumBuckets--;
-#endif
 			}
 
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 			for (size_t I = 0; I < PoolSize; I++)
 			{
 				_Bucket.Free(mBucketPool[I]);
 			}
-#endif
 
-#if CL_HASH_MAP_DEBUG && CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+#if CL_HASH_MAP_DEBUG
 			pBucket = _pFirstBucket;
 
 			while (pBucket)
@@ -678,9 +515,8 @@ namespace CL
 		size_t _NumElemetns = 0;
 		size_t _NumBuckets = 0;
 		Bucket* _pFirstBucket = nullptr;
-#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+
 		CL::Pool<HashMapPair> _Pairs;
-#endif
 		CL::Pool<Bucket> _Bucket;
 		CL::Vector<Bucket*> _HashMap;
 	};

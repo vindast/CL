@@ -143,12 +143,17 @@ int main(int argc, const char* argv[])
 
 	CL::Vector<TestCondition> Tests;
 
-	for (size_t i = 0; i < 4; i++)
+	for (size_t i = 0; i < 49; i++)
+	{
+		Tests.PushBack(TestCondition(20 * (i + 1)));
+	}
+
+	for (size_t i = 0; i < 16; i++)
 	{
 		Tests.PushBack(TestCondition(1000 * (i + 1)));
 	}
 
-	const size_t NumIterationPerTests = 4;
+	const size_t NumIterationPerTests = 16;
 
 	for (TestCondition& Test : Tests)
 	{
@@ -258,8 +263,6 @@ int main(int argc, const char* argv[])
 			Test.TotalCLInsertTime += CLInsertTime.getLastTimeInMiliSeconds();
 			Test.TotalCLSearchTime += CLSearchTime.getLastTimeInMiliSeconds();
 			Test.TotalCLEraseTimer += CLEraseTimer.getLastTimeInMiliSeconds();
-
-			Test.Print();
 		}
 	}
 
