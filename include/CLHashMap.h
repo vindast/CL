@@ -4,549 +4,673 @@
 #include <CLMemory.h>
 #include <CLList.h>
 #include <CLEmbeddedArray.h>
+#include <CLVector.h>
 
-#define CL_HASH_MAP_LOAD_FACTOR 0.75
-#define CL_HASH_MAP_MAX_LINEAR_SEARCH_THRESHOLD 4
-//#define CL_HASH_MAP_LIST_IMPLEMNTATION 0
+#define CL_HASH_MAP_LOAD_FACTOR 0.85
 
-#ifdef CL_HASH_MAP_LIST_IMPLEMNTATION
-#define CL_HASH_MAX_MAX_COLLISIONS 4
+// #TODO CLConfig
+#define CL_ENABLE_PROBING_INSERT 0
+#define CL_HASH_MAP_USE_KEY_ARRAY 0
+
+#if CL_ENABLE_PROBING_INSERT
+#define CL_HASH_MAP_MAX_PROBING_TAPS 4
+#define CL_HASH_MAP_REHASH_SIZE_MULTIPLIER 8
 #else
-#define CL_HASH_MAX_MAX_COLLISIONS 4
+#define CL_HASH_MAP_REHASH_SIZE_MULTIPLIER 2
 #endif
+
+// #TODO CLConfig
+#define CL_HASH_MAP_ENABLE_COLLISION_RESOLVE 1
+//#define CL_PARANOIDAL_DEBUG 1
+
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+#define CL_HASH_MAP_MAX_COLLISIONS 4
+#define CL_HASH_MAP_MAX_REHASH_POOL_SIZE 16
+#endif
+
+#if CL_PARANOIDAL_DEBUG && CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+#ifndef CL_HASH_MAP_DEBUG
+#define CL_HASH_MAP_DEBUG 1
+#endif
+#endif
+
+#include <CLString.h>
 
 namespace CL
 {
-	template<typename KeyType, typename ValueType>
+	typedef size_t KeyType;
+	typedef CL::String ValueType;
+
 	struct HashMapPair
 	{
 		HashMapPair() = default;
-		HashMapPair(const size_t& InKey, const String& InValue) : Key(InKey), Value(InValue)
+		HashMapPair(const KeyType& InKey, const ValueType& InValue) :
+			Key(InKey), Value(InValue)
 		{
 
 		}
-		HashMapPair(const size_t& InKey, String&& InValue) : Key(InKey), Value(Forward(InValue))
+		HashMapPair(const KeyType&& InKey, const ValueType& InValue) :
+			Key(CL::Move(InKey)), Value(InValue)
 		{
 
 		}
-		HashMapPair(size_t&& InKey, String&& InValue) : Key(Forward(InKey)), Value(Forward(InValue))
+		HashMapPair(const KeyType& InKey, const ValueType&& InValue) :
+			Key(InKey), Value(CL::Move(InValue))
 		{
 
 		}
-		HashMapPair(size_t&& InKey, const String& InValue) : Key(Forward(InKey)), Value(InValue)
+		HashMapPair(const KeyType&& InKey, const ValueType&& InValue) :
+			Key(CL::Move(InKey)), Value(CL::Move(InValue))
 		{
-			std::forward
-		}
-		HashMapPair(HashMapPair&& Other):
-			Key(Move(Other.Key)), Value(Move(Other.Value))
-		{
-			
-		}
-		HashMapPair& operator = (HashMapPair&& Other)
-		{
-			Key   = Move(Other.Key);
-			Value = Move(Other.Value);
-			return *this;
+
 		}
 
-		size_t Key;
-		String Value;
-
-	private:
-		HashMapPair(const HashMapPair&) = delete;
-		HashMapPair& operator = (const HashMapPair&) = delete;
+		size_t Hash;
+		KeyType Key;
+		ValueType Value;
 	};
 
-	template<typename KeyType, typename ValueType>
-	struct HashMapNode
+	struct Bucket
 	{
-		typedef HashMapPair<KeyType, ValueType> HashMapPairType;
-#ifdef CL_HASH_MAP_LIST_IMPLEMNTATION
-		HashMapNode(CL::RefPtr<Pool<typename List<HashMapPairType>::ListNode>>& pHashMapPairPool) : Values(pHashMapPairPool)
+		Bucket()
 		{
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+		//	memset(Pairs, 0, sizeof(HashMapPair) * CL_HASH_MAP_MAX_COLLISIONS);
 
-		}
-
-		typename List<HashMapPairType>::ForwardIterator FindPairIndex(const size_t& Key)
-		{
-			for (auto it = Values.begin(); it; it++)
+			for (size_t I = 0; I < 4; I++)
 			{
-				if (it().Key == Key)
-				{
-					return it;
-				}
+				Pairs[I] = nullptr;
 			}
-
-			return List<HashMapPairType>::ForwardIterator();
-		}
-		
-		List<HashMapPairType> Values;
-#else
-		HashMapNode() = default;
-
-		typename EmbeddedArray<HashMapPairType, CL_HASH_MAX_MAX_COLLISIONS>::ForwardIterator FindPairIndex(const size_t& Key)
-		{
-			for (auto it = Values.begin(); it; it++)
-			{
-				if (it().Key == Key)
-				{
-					return it;
-				}
-			}
-
-			return EmbeddedArray<HashMapPairType, CL_HASH_MAX_MAX_COLLISIONS>::ForwardIterator();
-		}
-
-		EmbeddedArray<HashMapPairType, CL_HASH_MAX_MAX_COLLISIONS> Values;
 #endif
+		}
 
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+		size_t NumPairs = 0;
+#if CL_HASH_MAP_USE_KEY_ARRAY
+		KeyType Hashes[CL_HASH_MAP_MAX_COLLISIONS];
+#else
+		size_t Hashes[CL_HASH_MAP_MAX_COLLISIONS];
+#endif
+		
+		HashMapPair* Pairs[CL_HASH_MAP_MAX_COLLISIONS];
+#if CL_HASH_MAP_USE_KEY_ARRAY
+		size_t FindPair(const KeyType& Key) const
+#else
+		size_t FindPair(const KeyType& Key, const size_t& Hash) const
+#endif
+		{
+			for (size_t Index = 0; Index < NumPairs; Index++)
+			{
+#if CL_HASH_MAP_USE_KEY_ARRAY
+				if (Hashes[Index] == Key)
+				{
+					return Index;
+				}
+#else
+				if (Hashes[Index] == Hash && Pairs[Index]->Key == Key)
+				{
+					return Index;
+				}
+#endif
+			}
+
+			return CL_HASH_MAP_MAX_COLLISIONS;
+		}
+		void Insert(HashMapPair* pPair)
+		{
+			CL_DEBUG_ASSERT(NumPairs < CL_HASH_MAP_MAX_COLLISIONS);
+			Hashes[NumPairs] = pPair->Hash;
+#if CL_HASH_MAP_USE_KEY_ARRAY
+			Hashes[NumPairs] = pPair->Key;
+#else
+			Hashes[NumPairs] = pPair->Hash;
+#endif
+			Pairs[NumPairs] = pPair;
+			NumPairs++;
+		}
+		void Erase(size_t Index)
+		{
+			CL_DEBUG_ASSERT(NumPairs > 0);
+
+			NumPairs--;
+
+			if (NumPairs != Index)
+			{
+				Pairs[Index] = Pairs[NumPairs];
+				Hashes[Index] = Hashes[NumPairs];
+			}
+
+			Pairs[NumPairs] = nullptr;
+		}
+		bool IsAbleToInsert() const { return NumPairs < CL_HASH_MAP_MAX_COLLISIONS; }
+		bool IsEmpty() const { return NumPairs == 0; }
+
+#else
+		HashMapPair Pair;
+#endif
+		
+		Bucket* pNext = nullptr;
+		Bucket* pPrevious = nullptr;
 	};
 
-	template<typename KeyType, typename ValueType>
 	class HashMapIterator
 	{
-		template<typename KeyType, typename ValueType>
-		friend class HashMap;
+		typedef Bucket BucketType;
+		typedef HashMapPair ObjType;
+		typedef HashMapIterator Iterator;
 	public:
-		typedef HashMapNode<KeyType, ValueType> HashMapNodeType;
-		typedef HashMapPair<KeyType, ValueType> HashMapPairType;
-		typedef HashMapIterator<KeyType, ValueType> Iterator;
-#ifdef CL_HASH_MAP_LIST_IMPLEMNTATION
-		typedef typename List<HashMapPairType>::ForwardIterator ContainerIterator;
-#else
-		typedef typename EmbeddedArray<HashMapPairType, CL_HASH_MAX_MAX_COLLISIONS>::ForwardIterator ContainerIterator;
+		HashMapIterator() : _pBucket(nullptr)
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			, _Index(0)
 #endif
+		{
+
+		}
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+		HashMapIterator(BucketType* pBucket, size_t Index) : _pBucket(pBucket), _Index(Index)
+		{
+
+		}
+#else
+		HashMapIterator(BucketType* pBucket) : _pBucket(pBucket)
+		{
+
+		}
+#endif	
 		Iterator& operator++(int)
 		{
-			CL_DEBUG_ASSERT(_mEntry);
-			FindNext();
+			Inc();
 			return *this;
 		}
 		Iterator& operator++()
 		{
-			CL_DEBUG_ASSERT(_mEntry);
-			FindNext();
+			Inc();
 			return *this;
 		}
-		const HashMapPairType& operator*()
+		void Inc()
 		{
-			return _ContainerIterator();
+			CL_DEBUG_ASSERT(_pBucket);
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			CL_DEBUG_ASSERT(_Index < _pBucket->NumPairs);
+			_Index++;
+			if (_Index >= _pBucket->NumPairs)
+			{
+				_Index = 0;
+				_pBucket = _pBucket->pNext;
 		}
-		const HashMapPairType& operator ()()
+#else
+			_pBucket = _pBucket->pNext;
+#endif
+		}
+		ObjType& operator*()
 		{
-			return _ContainerIterator();
+			CL_DEBUG_ASSERT(_pBucket);
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
+			return *_pBucket->Pairs[_Index];
+#else
+			return _pBucket->Pair;
+#endif
 		}
-		const HashMapPairType& operator ->()
+		ObjType& operator ()()
 		{
-			return _ContainerIterator();
+			CL_DEBUG_ASSERT(_pBucket);
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
+			return *_pBucket->Pairs[_Index];
+#else
+			return _pBucket->Pair;
+#endif
 		}
+		const KeyType& GetKey()
+		{
+			CL_DEBUG_ASSERT(_pBucket);
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
+			return _pBucket->Pairs[_Index]->Key;
+#else
+			return _pBucket->Pair.Key;
+#endif
+		}
+		ValueType& GetValue()
+		{
+			CL_DEBUG_ASSERT(_pBucket);
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
+			return _pBucket->Pairs[_Index]->Value;
+#else
+			return _pBucket->Pair.Value;
+#endif
+		}
+		const ValueType& GetValue() const
+		{
+			CL_DEBUG_ASSERT(_pBucket);
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
+			return _pBucket->Pairs[_Index]->Value;
+#else
+			return _pBucket->Pair.Value;
+#endif
+		}
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 		operator bool() const
 		{
-			return _mEntry;
+			return _pBucket && _Index < _pBucket->NumPairs;
 		}
 		bool operator == (const Iterator& other) const
 		{
-			return _ContainerIterator == other._ContainerIterator;
+			return _pBucket == other._pBucket && (_pBucket ? _Index == other._Index : true);
 		}
 		bool operator != (const Iterator& other) const
 		{
-			return _ContainerIterator != other._ContainerIterator;
+			return _pBucket != other._pBucket || (_pBucket ? _Index != other._Index : false);
 		}
-	private:
-		CL_FORCEINLINE void FindNext()
+		size_t GetIndex() const { return _Index; }
+#else
+		operator bool() const
 		{
-			_ContainerIterator++;
-
-			if (!_ContainerIterator)
-			{
-				_Index++;
-				for (; _Index < _Capacity; _Index++)
-				{
-					if (_mEntry[_Index])
-					{
-						_ContainerIterator = _mEntry[_Index]->Values.begin();
-						break;
-					}
-				}
-			}
+			return _pBucket;
 		}
+		bool operator == (const Iterator& other) const
+		{
+			return _pBucket == other._pBucket;
+		}
+		bool operator != (const Iterator& other) const
+		{
+			return _pBucket != other._pBucket;
+		}
+#endif
+		const BucketType* GetBucket() const { return _pBucket; }
+	private:
+		BucketType* _pBucket;
 
-		HashMapNodeType** _mEntry = nullptr;
-		size_t _Capacity;
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
 		size_t _Index;
-		ContainerIterator _ContainerIterator;
+#endif
 	};
 
-	template<typename KeyType, typename ValueType>
 	class HashMap
 	{
 	public:
-		typedef HashMapNode<KeyType, ValueType> HashMapNodeType;
-		typedef HashMapPair<KeyType, ValueType> HashMapPairType;
-		typedef typename HashMapIterator<KeyType, ValueType> ForwardIterator;
-
-		HashMap() : 
-#ifdef CL_HASH_MAP_LIST_IMPLEMNTATION
-			_pHashMapPairPool(CL::RefPtr<Pool<List<HashMapPairType>::ListNode>>::MakeRefPtr(256)),
+		HashMap() : _Bucket(32)
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			, _Parirs(32)
 #endif
-			_EntriesPool(256)
 		{
-			_Capacity = 64;
-			_NumUsedEntries = 0;
-			_mEntry = (HashMapNodeType**)CL_MALLOC(_Capacity * sizeof(HashMapNodeType*));
-			memset(_mEntry, 0, sizeof(HashMapNodeType*) * _Capacity);
+			_HashMap.Resize(64, nullptr);
 		}
-		__forceinline size_t IndexFromKey(size_t Key) const
+		HashMapIterator begin()
 		{
-			size_t Index = std::hash<size_t>::_Do_hash(Key) & (_Capacity - 1);
-			return Index;
-			//return Key % _Capacity;
-		}
-		void Insert(size_t Key, String&& Value)
-		{
-			if (float(_NumUsedEntries) / _Capacity > CL_HASH_MAP_LOAD_FACTOR)
-			{
-				ReHash(_Capacity * 2);
-			}
-
-			size_t Index = IndexFromKey(Key);
-			HashMapNodeType* pNode = _mEntry[Index];
-
-			if (!pNode)
-			{
-				_NumUsedEntries++;
-				_NumElements++;
-#ifdef CL_HASH_MAP_LIST_IMPLEMNTATION
-				pNode = _EntriesPool.Alloc(_pHashMapPairPool);
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			return HashMapIterator(_pFirstBucket, 0);
 #else
-				pNode = _EntriesPool.Alloc();
+			return HashMapIterator(_pFirstBucket);
 #endif
-				pNode->Values.PushBack(HashMapPairType(Key, Value));
-				_mEntry[Index] = pNode;
-				return;
-			}
-
-			auto it = pNode->FindPairIndex(Key);
-
-			if (it)
-			{
-				it().Value = Forward(Value);
-			}
-			else if (pNode->Values.GetElementsCount() >= CL_HASH_MAX_MAX_COLLISIONS - 1)
-			{
-				const size_t MaxIndex = CL_MIN(_Capacity, Index + CL_HASH_MAP_MAX_LINEAR_SEARCH_THRESHOLD);
-				HashMapNodeType* pFoundNode = nullptr;
-
-				for (size_t i = Index + 1; i < MaxIndex; i++)
-				{
-					HashMapNodeType* pNode = _mEntry[i];
-					if (pNode)
-					{
-						auto it = pNode->FindPairIndex(Key);
-
-						if(it)
-						{
-							it().Value = Move(Value);
-							return;
-						}
-
-						if (pNode->Values.GetElementsCount() < CL_HASH_MAX_MAX_COLLISIONS - 1)
-						{
-							pFoundNode = pNode;
-						}
-					}
-					else
-					{
-						_NumUsedEntries++;
-						_NumElements++;
-#ifdef CL_HASH_MAP_LIST_IMPLEMNTATION
-						pNode = _EntriesPool.Alloc(_pHashMapPairPool);
+		}
+		HashMapIterator end()
+		{
+			return HashMapIterator();
+		}
+		HashMapIterator Find(const KeyType& Key)
+		{
+			const size_t Hash = std::hash<size_t>{}(Key);
+			size_t Index = Hash % _HashMap.GetSize();
+#if CL_ENABLE_PROBING_INSERT
+			Bucket* pBucket = ProbingSearch(Index, Key);
+			return HashMapIterator(pBucket);
 #else
-						pNode = _EntriesPool.Alloc();
-#endif
-						pNode->Values.PushBack(HashMapPairType(Key, Value));
-						_mEntry[i] = pNode;
-						return;
-					}
-				}
-
-				if (pFoundNode)
-				{
-					pFoundNode->Values.PushBack(HashMapPairType(Key, Value));
-				}
-
-				ReHash(_Capacity * 2);
-				Insert(Key, CL::Forward(Value));
-			}
-			else
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			Bucket* pBucket = _HashMap[Index];
+			if (pBucket)
 			{
-				pNode->Values.PushBack(HashMapPairType(Key, Value));
-				_NumElements++;
-			}
-		}
-		CL_NO_DISCARD ForwardIterator Find(const size_t& Key) const
-		{
-			ForwardIterator MapIterator;
-
-			if (_mEntry)
-			{
-				size_t Index = IndexFromKey(Key);
-				const size_t MaxIndex = CL_MIN(_Capacity, Index + CL_HASH_MAP_MAX_LINEAR_SEARCH_THRESHOLD);
-				HashMapNodeType* pFoundNode = nullptr;
-
-				for (size_t i = Index; i < MaxIndex; i++)
-				{
-					HashMapNodeType* pNode = _mEntry[i];
-					if (pNode)
-					{
-						auto it = pNode->FindPairIndex(Key);
-
-						if (it)
-						{
-							MapIterator._Capacity = _Capacity;
-							MapIterator._mEntry = _mEntry;
-							MapIterator._Index = i;
-							MapIterator._ContainerIterator = it;
-							return MapIterator;
-						}
-					}
-				}
-			}
-
-			return MapIterator;
-		}
-		ForwardIterator Erase(const ForwardIterator& It)
-		{
-			CL_ASSERT(It);
-
-			HashMapNodeType*& pNode = _mEntry[It._Index];
-
-			ForwardIterator NewIt = It;
-#ifdef CL_HASH_MAP_LIST_IMPLEMNTATION
-			NewIt._ContainerIterator = pNode->Values.Erase(It._ContainerIterator);
+#if CL_HASH_MAP_USE_KEY_ARRAY
+				Index = pBucket->FindPair(Key);
 #else
-			NewIt._ContainerIterator = pNode->Values.EraseSwap(It._ContainerIterator);
-#endif
-			
-			_NumElements--;
+				Index = pBucket->FindPair(Key, Hash);
+#endif	
 
-			if (!NewIt._ContainerIterator)
-			{
-				NewIt._Index++;
-				for (; NewIt._Index < _Capacity; NewIt._Index++)
+				if (Index < CL_HASH_MAP_MAX_COLLISIONS)
 				{
-					if (NewIt._mEntry[NewIt._Index])
+					return HashMapIterator(pBucket, Index);
+				}
+			}
+
+			return HashMapIterator();
+#else
+			Bucket* pBucket = _HashMap[Index];
+			return HashMapIterator(pBucket);
+#endif
+#endif
+		}
+		HashMapIterator Erase(HashMapIterator It)
+		{
+			size_t Index = It().Hash % _HashMap.GetSize();
+
+#if CL_ENABLE_PROBING_INSERT
+			Bucket* pBucket = ProbingSearch(Index, It.GetKey());
+#else
+			Bucket* pBucket = _HashMap[Index];
+#endif
+
+			if (pBucket)
+			{
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+				_Parirs.Free(pBucket->Pairs[It.GetIndex()]);
+				pBucket->Erase(It.GetIndex());
+				_NumElemetns--;
+
+				if (pBucket->IsEmpty())
+				{
+					Bucket* pNextBucket = pBucket->pNext;
+
+					if (pBucket->pNext)
 					{
-						NewIt._ContainerIterator = NewIt._mEntry[NewIt._Index]->Values.begin();
-						break;
+						pBucket->pNext->pPrevious = pBucket->pPrevious;
 					}
+
+					if (pBucket->pPrevious)
+					{
+						pBucket->pPrevious->pNext = pBucket->pNext;
+					}
+
+					if (_pFirstBucket == pBucket)
+					{
+						_pFirstBucket = pBucket->pNext;
+					}
+
+					_Bucket.Free(pBucket);
+					_HashMap[Index] = nullptr;
+					_NumBuckets--;
+
+					return HashMapIterator(pNextBucket, 0);
 				}
-			}
-
-			if (!pNode->Values.GetElementsCount())
-			{
-				_NumUsedEntries--;
-				_EntriesPool.Free(pNode);
-				pNode = nullptr;
-
-				//if (float(_NumUsedEntries) / (_Capacity) < 0.1)
-				//{
-				//	if (NewIt._ContainerIterator)
-				//	{
-				//		KeyType Key = NewIt().Key;
-				//		ReHash(_Capacity * 0.75);
-				//		NewIt = Find(Key);
-				//	}
-				//	else
-				//	{
-				//		ReHash(_Capacity * 0.75);
-				//	}
-				//}
-			}
-
-			return NewIt;
-		}
-		void Clear()
-		{
-			if (_mEntry)
-			{
-				for (size_t i = 0; i < _Capacity; i++)
+				else
 				{
-					_EntriesPool.Free(_mEntry[i]);
+					return It ? It : HashMapIterator(pBucket->pNext, 0);
+				}
+#else
+				Bucket* pNextBucket = pBucket->pNext;
+
+				if (pBucket->pNext)
+				{
+					pBucket->pNext->pPrevious = pBucket->pPrevious;
 				}
 
-				CL_FREE(_mEntry);
-				_Capacity = 0;
-				_NumElements = 0;
-				_NumUsedEntries = 0;
-				_mEntry = nullptr;
-#ifdef CL_HASH_MAP_LIST_IMPLEMNTATION
-				_pHashMapPairPool.Free();
+				if (pBucket->pPrevious)
+				{
+					pBucket->pPrevious->pNext = pBucket->pNext;
+				}
+
+				if (_pFirstBucket == pBucket)
+				{
+					_pFirstBucket = pBucket->pNext;
+				}
+
+				_Bucket.Free(pBucket);
+				_HashMap[Index] = nullptr;
+				_NumBuckets--;
+				_NumElemetns--;
+				return HashMapIterator(pNextBucket);
 #endif
 			}
-		}
-		ForwardIterator begin()
-		{
-			ForwardIterator MapIterator;
 
-			for (size_t Index = 0; Index < _Capacity; Index++)
+			return HashMapIterator();
+		}
+		bool Insert(const HashMapPair& InPair)
+		{
+			size_t Hash = std::hash<size_t>{}(InPair.Key);
+			size_t Index = Hash % _HashMap.GetSize();
+#if CL_ENABLE_PROBING_INSERT
+			Bucket* pBucket = ProbingSearch(Index, InPair.Key);
+#else
+			Bucket* pBucket = _HashMap[Index];
+#endif
+
+#if CL_ENABLE_PROBING_INSERT
+			if (pBucket)
+#else
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+#if CL_HASH_MAP_USE_KEY_ARRAY
+			if (pBucket && pBucket->FindPair(InPair.Key) < CL_HASH_MAP_MAX_COLLISIONS)
+#else
+			if (pBucket && pBucket->FindPair(InPair.Key, Hash) < CL_HASH_MAP_MAX_COLLISIONS)
+#endif
+#else
+			if (pBucket && pBucket->Pair.Key == InPair.Key)
+#endif
+#endif
 			{
-				if (_mEntry[Index])
-				{
-					MapIterator._Capacity = _Capacity;
-					MapIterator._mEntry = _mEntry;
-					MapIterator._Index = Index;
-					MapIterator._ContainerIterator = _mEntry[Index]->Values.begin();
-					break;
-				}
+				return false;
 			}
 
-			return MapIterator;
-		}
-		ForwardIterator end()
-		{
-			return ForwardIterator();
-		}
-		~HashMap()
-		{
-			Clear();
-		}
+			if (float(_NumBuckets) / _HashMap.GetSize() > CL_HASH_MAP_LOAD_FACTOR)
+			{
+				ReHash();
+				Index = Hash % _HashMap.GetSize();
+			}
 
-		HashMap(const HashMap&) = delete;
-		HashMap& operator = (const HashMap&) = delete;
+#if CL_ENABLE_PROBING_INSERT
+			Index = ProbingInsert(Index);
+#endif
 
+#if CL_ENABLE_PROBING_INSERT
+			while (Index == -1)
+#else
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			while (_HashMap[Index] && !_HashMap[Index]->IsAbleToInsert())
+#else
+			while (_HashMap[Index])
+#endif
+#endif
+			{
+				ReHash();
+#if CL_ENABLE_PROBING_INSERT
+				Index = ProbingInsert(Hash % _HashMap.GetSize());
+#else
+				Index = Hash % _HashMap.GetSize();
+#endif
+			}
+
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			Bucket* pNewBucket = _HashMap[Index];
+			if (!pNewBucket)
+			{
+				pNewBucket = _Bucket.Alloc();
+				_NumBuckets++;
+				pNewBucket->pNext = _pFirstBucket;
+
+				if (_pFirstBucket)
+				{
+					_pFirstBucket->pPrevious = pNewBucket;
+				}
+
+				_pFirstBucket = pNewBucket;
+				_HashMap[Index] = pNewBucket;
+			}
+
+			HashMapPair* pPair = _Parirs.Alloc(InPair);
+			pPair->Hash = Hash;
+			pNewBucket->Insert(pPair);
+#else
+			Bucket* pNewBucket = _Bucket.Alloc();
+			_NumBuckets++;
+			pNewBucket->pNext = _pFirstBucket;
+
+			if (_pFirstBucket)
+			{
+				_pFirstBucket->pPrevious = pNewBucket;
+			}
+
+			_pFirstBucket = pNewBucket;
+			_HashMap[Index] = pNewBucket;
+
+			pNewBucket->Pair = InPair;
+			pNewBucket->Pair.Hash = Hash;
+#endif
+
+			_NumElemetns++;
+
+			return true;
+		}
+		size_t GetNumElements() const
+		{
+			return _NumElemetns;
+		}
 	private:
-		CL::Pool<HashMapNodeType> _EntriesPool;
-#ifdef CL_HASH_MAP_LIST_IMPLEMNTATION
-		CL::RefPtr<Pool<typename List<HashMapPairType>::ListNode>> _pHashMapPairPool;
-#endif
-
-		bool bRehash = false;
-
-		HashMapNodeType** _mEntry = nullptr;
-		size_t _Capacity = 0;
-		size_t _NumUsedEntries = 0;
-		size_t _NumElements = 0;
-		
-		void Insert(HashMapPairType&& Pair)
+#if CL_ENABLE_PROBING_INSERT
+		size_t ProbingInsert(size_t StartIndex) const
 		{
-			if (float(_NumUsedEntries) / _Capacity > CL_HASH_MAP_LOAD_FACTOR)
+			size_t Index = StartIndex;
+
+			for (size_t i = 1; i < CL_HASH_MAP_MAX_PROBING_TAPS && _HashMap[Index]; i++)
 			{
-				ReHash(_Capacity * 2);
+				Index = (StartIndex + (i + i * i) / 2) % _HashMap.GetSize();
 			}
 
-			size_t Index = IndexFromKey(Pair.Key);
-			HashMapNodeType* pNode = _mEntry[Index];
-
-			if (!pNode)
-			{
-				_NumUsedEntries++;
-				_NumElements++;
-
-#ifdef CL_HASH_MAP_LIST_IMPLEMNTATION
-				pNode = _EntriesPool.Alloc(_pHashMapPairPool);
-#else
-				pNode = _EntriesPool.Alloc();
-#endif
-
-				pNode->Values.PushBack(Forward(Pair));
-				_mEntry[Index] = pNode;
-				return;
-			}
-
-			if (pNode->Values.GetElementsCount() >= CL_HASH_MAX_MAX_COLLISIONS - 1)
-			{
-				const size_t MaxIndex = CL_MIN(_Capacity, Index + CL_HASH_MAP_MAX_LINEAR_SEARCH_THRESHOLD);
-				HashMapNodeType* pFoundNode = nullptr;
-
-				for (size_t i = Index + 1; i < MaxIndex; i++)
-				{
-					HashMapNodeType* pNode = _mEntry[i];
-					if (pNode)
-					{
-						if (pNode->Values.GetElementsCount() <= CL_HASH_MAX_MAX_COLLISIONS)
-						{
-							pFoundNode = pNode;
-						}
-					}
-					else
-					{
-						_NumUsedEntries++;
-						_NumElements++;
-
-#ifdef CL_HASH_MAP_LIST_IMPLEMNTATION
-						pNode = _EntriesPool.Alloc(_pHashMapPairPool);
-#else
-						pNode = _EntriesPool.Alloc();
-#endif
-
-						pNode->Values.PushBack(Forward(Pair));
-						_mEntry[i] = pNode;
-						return;
-					}
-				}
-
-				if (pFoundNode)
-				{
-					pFoundNode->Values.PushBack(Forward(Pair));
-					return;
-				}
-
-				CL_FATAL();
-			}
-			else
-			{
-				pNode->Values.PushBack(Forward(Pair));
-				_NumElements++;
-			}
+			return _HashMap[Index] ? -1 : Index;
 		}
-		void ReHash(size_t NewCapacity)
+		Bucket* ProbingSearch(size_t& StartIndex, const KeyType& Key) const
 		{
-			//CL_ASSERT(!bRehash);
+			size_t Index = 0;
 
-			if (NewCapacity < 64)
+			for (size_t i = 0; i < CL_HASH_MAP_MAX_PROBING_TAPS; i++)
 			{
-				return;
+				Index = (StartIndex + (i + i * i) / 2) % _HashMap.GetSize();
+
+				Bucket* pBucket = _HashMap[Index];
+
+				if (pBucket && pBucket->Pair.Key == Key)
+				{
+					StartIndex = Index;
+					return pBucket;
+				}
 			}
 
-			bRehash = true;
+			return nullptr;
+		}
+#endif
+		void ReHash()
+		{
+			size_t NewSize = _HashMap.GetSize() * CL_HASH_MAP_REHASH_SIZE_MULTIPLIER;
+			_HashMap.Clear();
+			_HashMap.Resize(NewSize, nullptr);
 
-			size_t OldCapacity = _Capacity;
-			_Capacity = NewCapacity;
-			_NumUsedEntries = 0;
-			_NumElements = 0;
+			CL_DEBUG_ASSERT(_HashMap.GetSize() == NewSize);
 
-			HashMapNodeType** mOldEntry = _mEntry;
-			_mEntry = (HashMapNodeType**)CL_MALLOC(_Capacity * sizeof(HashMapNodeType*));
-			memset(_mEntry, 0, sizeof(HashMapNodeType*) * _Capacity);
+			Bucket* pBucket = _pFirstBucket;
 
-			for (size_t ArrayIndex = 0; ArrayIndex < OldCapacity; ArrayIndex++)
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			_pFirstBucket = nullptr;
+			Bucket* mBucketPool[CL_HASH_MAP_MAX_REHASH_POOL_SIZE];
+			size_t PoolSize = 0;
+#endif
+
+			while (pBucket)
 			{
-				HashMapNodeType* pNode = mOldEntry[ArrayIndex];
-
-				if (pNode && pNode->Values.GetElementsCount())
+#if CL_ENABLE_PROBING_INSERT
+				const size_t Index = ProbingInsert(pBucket->Pair.Hash % _HashMap.GetSize());
+				_HashMap[Index] = pBucket;
+#else
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+// #TODO optimize
+				for (size_t I = 0; I < pBucket->NumPairs; I++)
 				{
-					size_t Index = IndexFromKey(pNode->Values.begin()().Key);
-					if (pNode->Values.GetElementsCount() == 1 && !_mEntry[Index])
+					HashMapPair* pPair = pBucket->Pairs[I];
+					if (pPair)
 					{
-						_mEntry[Index] = pNode;
-						pNode = nullptr;
-					}
-					else
-					{
-						for (HashMapPairType& Pair : pNode->Values)
+						const size_t Index = pPair->Hash % _HashMap.GetSize();
+						
+						if (!_HashMap[Index])
 						{
-							Insert(Move(Pair));
+							Bucket* pNewBucket;
+
+							if (PoolSize > 0)
+							{
+								PoolSize--;
+								pNewBucket = mBucketPool[PoolSize];
+							}
+							else
+							{
+								pNewBucket = _Bucket.Alloc();
+							}
+
+							_NumBuckets++;
+							_HashMap[Index] = pNewBucket;
+
+							if (_pFirstBucket)
+							{
+								_pFirstBucket->pPrevious = pNewBucket;
+								pNewBucket->pNext = _pFirstBucket;
+							}
+							
+							_pFirstBucket = pNewBucket;
 						}
+
+						_HashMap[Index]->Insert(pPair);
 					}
 				}
 
-				_EntriesPool.Free(pNode);
+				pBucket->NumPairs = 0;
+#else
+				const size_t Index = pBucket->Pair.Hash % _HashMap.GetSize(); 
+				CL_DEBUG_ASSERT(!_HashMap[Index]);
+				_HashMap[Index] = pBucket;
+#endif
+#endif			
+
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+				Bucket* pOldBucket = pBucket;
+#endif
+				pBucket = pBucket->pNext;
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+
+				if (PoolSize < CL_HASH_MAP_MAX_REHASH_POOL_SIZE)
+				{
+					mBucketPool[PoolSize++] = pOldBucket;
+					pOldBucket->pNext = nullptr;
+					pOldBucket->pPrevious = nullptr;
+					pOldBucket->NumPairs = 0;
+				}
+				else
+				{
+					_Bucket.Free(pOldBucket);
+				}
+				
+				_NumBuckets--;
+#endif
 			}
 
-			CL_FREE(mOldEntry);
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			for (size_t I = 0; I < PoolSize; I++)
+			{
+				_Bucket.Free(mBucketPool[I]);
+			}
+#endif
 
-			bRehash = false;
+#if CL_HASH_MAP_DEBUG && CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+			pBucket = _pFirstBucket;
+
+			while (pBucket)
+			{
+				for (size_t I = 0; I < pBucket->NumPairs; I++)
+				{
+					auto It = Find(pBucket->Pairs[I]->Key);
+					CL_ASSERT(It);
+					CL_ASSERT(It.GetIndex() == I);
+					CL_ASSERT(It.GetBucket() == pBucket);
+				}
+				pBucket = pBucket->pNext;
+			}
+#endif
 		}
+
+		size_t _NumElemetns = 0;
+		size_t _NumBuckets = 0;
+		Bucket* _pFirstBucket = nullptr;
+#if CL_HASH_MAP_ENABLE_COLLISION_RESOLVE
+		CL::Pool<HashMapPair> _Parirs;
+#endif
+		CL::Pool<Bucket> _Bucket;
+		CL::Vector<Bucket*> _HashMap;
 	};
 }

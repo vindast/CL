@@ -85,6 +85,7 @@ namespace CL
 			return it;
 		}
 		ForwardIterator end() const { return ForwardIterator(); }
+		bool IsEmpty() const { return _NumElements == 0; }
 		size_t GetElementsCount() const { return _NumElements; }
 		size_t GetCapacity() const { return Size; }
 		ForwardIterator EraseSwap(const ForwardIterator& It)

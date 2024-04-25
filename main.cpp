@@ -6,77 +6,89 @@
 #include <CLString.h>
 #include <FilesSystem.h>
 
+struct HashMapPair
+{
+	size_t Key;
+	CL::String Value;
+};
+
+// #TODO add to the CL::HashMap const iterator and make the CL::HashMap& as constant.
+void Validate(std::vector<HashMapPair> mTestValues, const std::unordered_map<size_t, CL::String>& StdMap, CL::HashMap& ClMap)
+{
+	for (size_t i = 0; i < mTestValues.size(); i++)
+	{
+		HashMapPair P = mTestValues[i];
+		auto it = ClMap.Find(P.Key);
+		auto stdit = StdMap.find(P.Key);
+
+		if (!it)
+		{
+			std::cout << "Key = " << P.Key << " fail to find " << std::endl;
+			if (stdit != StdMap.end())
+			{
+				std::cout << "std = (" << stdit->first << ", " << stdit->second << ")" << std::endl;
+			}
+
+			if (stdit != StdMap.end())
+			{
+				ClMap.Find(P.Key);
+			}
+
+			CL_ASSERT(stdit == StdMap.end());
+		}
+		else
+		{
+			std::cout << "Key = " << P.Key << ", value = " << P.Value << ", found = (" << it.GetKey() <<", " << it.GetValue() << "), std = (" << stdit->first <<", " << stdit->second << ")" << std::endl;
+			CL_ASSERT(P.Key == it.GetKey());
+			CL_ASSERT(P.Value == it.GetValue() || stdit->second == it.GetValue());
+			CL_ASSERT(stdit != StdMap.end() && stdit->second == it.GetValue());
+		}
+	}
+}
+
 int main(int argc, const char* argv[])
 {
-	std::cout << CL::GetFileNameFromPath("C:/repos/TEngine/GameProjects/NewEngineFunctionality/GameData/Asset/file.txt", false) << std::endl;
-	std::cout << CL::GetFileNameFromPath("C:\\repos\\TEngine\\GameProjects\\NewEngineFunctionality\\Assets\\OldCar.fbx", false) << std::endl;
-	return false;
-
-	CL::String std = CL::Forward(CL::String("sda"));
-
-	struct A
-	{
-		A() {};
-		A(int a) : i(a) {}
-
-		int i = 0;
-	};
-
-	CL::EmbeddedArray<A, 4> Array;
-
-	Array.PushBack({ 0 });
-	Array.PushBack(1);
-	Array.PushBack({ 2 });
-	Array.PushBack({ 3 });
-
-	for (auto& it : Array)
-	{
-		std::cout << it.i << std::endl;
-	}
-
-	Array.EraseSwap(1);
-
-	for (auto& it : Array)
-	{
-		std::cout << it.i << std::endl;
-	}
-
 	srand(0);
 	bool bTestStd = true;
 
-	struct Pair
-	{
-		size_t Key;
-		CL::String Value;
-	};
-
-	CL::HashMap<size_t, CL::String> ClMap;
+	//CL::HashMap<size_t, CL::String> ClMap;
+	CL::HashMap ClMap;
 	std::unordered_map<size_t, CL::String> StdMap;
-	std::vector<Pair> mTestValues;
+	std::vector<HashMapPair> mTestValues;
 
-	size_t NumTestValues = 25;
+	size_t NumTestValues = 256;
 
 	for (size_t i = 0; i < NumTestValues; i++)
 	{
 		size_t Key = ((rand() << 48) | (rand() << 32)) | (rand() << 16);
-		Pair P = { Key, CL::ToString((int)i) };
-		ClMap.Insert(P.Key, CL::String(P.Value));
+		HashMapPair P = { Key, CL::ToString((int)i) };
+
+		ClMap.Insert(CL::HashMapPair(P.Key, CL::String(P.Value)));
 		StdMap.insert(std::make_pair(P.Key, CL::String(P.Value)));
 		mTestValues.push_back(P);
+
+		//	Validate(mTestValues, StdMap, ClMap);
 	}
 
+	Validate(mTestValues, StdMap, ClMap);
+
 	size_t count = 0;
+	size_t deletionIndex = 0;
 	for (auto it = ClMap.begin(); it != ClMap.end(); )
 	{
-		std::cout << ++count << " Key = " << it().Key << ", Value = " << it().Value << std::endl;
+		std::cout << ++count << ":" << ClMap.GetNumElements() << ":" << (count - deletionIndex) << " Key = " << it.GetKey() << ", Value = " << it.GetValue() << std::endl;
 
 		if (rand() % 2)
 		{
-			auto stdit = StdMap.find(it().Key);
+			deletionIndex++;
+
+			auto stdit = StdMap.find(it.GetKey());
+
+			CL_ASSERT(stdit != StdMap.end());
+
 			StdMap.erase(stdit);
 
 			it = ClMap.Erase(it);
-			std::cout << "---deleted---" << std::endl;
 		}
 		else
 		{
@@ -84,132 +96,184 @@ int main(int argc, const char* argv[])
 		}
 	}
 
-	for (size_t i = 0; i < NumTestValues; i++)
-	{
-		Pair P = mTestValues[i];
-		auto it = ClMap.Find(P.Key);
-		auto stdit = StdMap.find(P.Key);
+	Validate(mTestValues, StdMap, ClMap);
 
-		if (!it)
+	struct TestCondition
+	{
+		TestCondition() = default;
+		TestCondition(const size_t InNumElemetns) : NumElements(InNumElemetns)
 		{
-			std::cout << "Key = " << P.Key << " fail to find " << std::endl;
-			CL_ASSERT(stdit == StdMap.end());
+
 		}
-		else
+		void Print() const
 		{
-			std::cout << "Key = " << P.Key << ", value = " << P.Value << ", found = " << it().Value << std::endl;
-			CL_ASSERT(stdit != StdMap.end() && stdit->second == it().Value);
+			auto PercentageDif = [](float A, float B) -> float
+			{
+				float Ratio = B / A;
+				return -(Ratio - 1.0f) * 100.0f;
+			};
+
+			std::cout << "NumElements = " << NumElements << std::endl;
+			std::cout << "TotalStdInsertTime = " << TotalStdInsertTime << ", TotalCLInsertTime = " << TotalCLInsertTime << " " << PercentageDif(TotalStdInsertTime, TotalCLInsertTime) << "%" << std::endl;
+			std::cout << "TotalStdSearchTime = " << TotalStdSearchTime << ", TotalCLSearchTime = " << TotalCLSearchTime << " " << PercentageDif(TotalStdSearchTime, TotalCLSearchTime) << "%" << std::endl;
+			std::cout << "TotalStdEraseTimer = " << TotalStdEraseTimer << ", TotalCLEraseTimer = " << TotalCLEraseTimer << " " << PercentageDif(TotalStdEraseTimer, TotalCLEraseTimer) << "%" << std::endl;
+		}
+		TestCondition& operator += (const TestCondition& InTest)
+		{
+			NumElements += InTest.NumElements;
+			TotalStdInsertTime += InTest.TotalStdInsertTime;
+			TotalStdSearchTime += InTest.TotalStdSearchTime;
+			TotalStdEraseTimer += InTest.TotalStdEraseTimer;
+			TotalCLInsertTime += InTest.TotalCLInsertTime;
+			TotalCLSearchTime += InTest.TotalCLSearchTime;
+			TotalCLEraseTimer += InTest.TotalCLEraseTimer;
+
+			return *this;
+		}
+
+		size_t NumElements;
+
+		float TotalStdInsertTime = 0.0f;
+		float TotalStdSearchTime = 0.0f;
+		float TotalStdEraseTimer = 0.0f;
+		float TotalCLInsertTime = 0.0f;
+		float TotalCLSearchTime = 0.0f;
+		float TotalCLEraseTimer = 0.0f;
+	};
+
+	CL::Vector<TestCondition> Tests;
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		Tests.PushBack(TestCondition(1000 * (i + 1)));
+	}
+
+	const size_t NumIterationPerTests = 4;
+
+	for (TestCondition& Test : Tests)
+	{
+		for (size_t test = 0; test < NumIterationPerTests; test++)
+		{
+			CL::HashMap ClMap;
+			std::unordered_map<size_t, CL::String> StdMap;
+
+			CL::Timer StdInsertTime, CLInsertTime;
+			CL::Timer StdSearchTime, CLSearchTime;
+			CL::Timer StdEraseTimer, CLEraseTimer;
+
+			std::vector<int> Keys;
+			std::vector<bool> Erases;
+
+			for (size_t i = 0; i < Test.NumElements; i++)
+			{
+				size_t Key = ((rand() << 48) | (rand() << 32)) | (rand() << 16) + (test > 5 ? i : 0);
+				Keys.push_back(Key);
+				Erases.push_back(rand() % 2);
+			}
+
+			for (size_t i = 0; i < Test.NumElements; i++)
+			{
+				size_t second = rand() % Test.NumElements;
+				std::swap(Keys[i], Keys[second]);
+			}
+
+			{
+				CL_SCOPE_TIMER_LOCK(CLInsertTime);
+
+				for (size_t i = 0; i < Test.NumElements; i++)
+				{
+					size_t Key = Keys[i];
+					ClMap.Insert(CL::HashMapPair(Key, CL::ToString(int(Key))));
+				}
+			}
+
+			if (bTestStd)
+			{
+				CL_SCOPE_TIMER_LOCK(StdInsertTime);
+
+				for (size_t i = 0; i < Test.NumElements; i++)
+				{
+					size_t Key = Keys[i];
+					StdMap.insert(std::make_pair(Key, CL::ToString(int(Key))));
+				}
+			}
+
+			{
+				CL_SCOPE_TIMER_LOCK(CLSearchTime);
+
+				for (size_t i = 0; i < Test.NumElements; i++)
+				{
+					ClMap.Find(i);
+				}
+			}
+
+			if (bTestStd)
+			{
+				CL_SCOPE_TIMER_LOCK(StdSearchTime);
+
+				for (size_t i = 0; i < Test.NumElements; i++)
+				{
+					StdMap.find(i);
+				}
+			}
+
+			{
+				CL_SCOPE_TIMER_LOCK(CLEraseTimer);
+
+				size_t Index = 0;
+				for (auto it = ClMap.begin(); it != ClMap.end();)
+				{
+					if (Erases[Index++])
+					{
+						it = ClMap.Erase(it);
+					}
+					else
+					{
+						it++;
+					}
+				}
+			}
+
+			if (bTestStd)
+			{
+				CL_SCOPE_TIMER_LOCK(StdEraseTimer);
+
+				size_t Index = 0;
+				for (auto it = StdMap.begin(); it != StdMap.end();)
+				{
+					if (Erases[Index++])
+					{
+						it = StdMap.erase(it);
+					}
+					else
+					{
+						it++;
+					}
+				}
+			}
+
+			Test.TotalStdInsertTime += StdInsertTime.getLastTimeInMiliSeconds();
+			Test.TotalStdSearchTime += StdSearchTime.getLastTimeInMiliSeconds();
+			Test.TotalStdEraseTimer += StdEraseTimer.getLastTimeInMiliSeconds();
+			Test.TotalCLInsertTime += CLInsertTime.getLastTimeInMiliSeconds();
+			Test.TotalCLSearchTime += CLSearchTime.getLastTimeInMiliSeconds();
+			Test.TotalCLEraseTimer += CLEraseTimer.getLastTimeInMiliSeconds();
+
+			Test.Print();
 		}
 	}
 
-	
-	for (size_t test = 0; test < 10; test++)
+	TestCondition TotalResult;
+
+	for (const TestCondition& Test : Tests)
 	{
-		CL::HashMap<size_t, CL::String> ClMap;
-		std::unordered_map<size_t, CL::String> StdMap;
-
-		size_t NumIteration = 10000;
-
-		CL::Timer StdInsertTime, CLInsertTime;
-		CL::Timer StdSearchTime, CLSearchTime;
-		CL::Timer StdEraseTimer, CLEraseTimer;
-
-		std::vector<int> Keys;
-		std::vector<bool> Erases;
-
-		for (size_t i = 0; i < NumIteration; i++)
-		{
-			size_t Key = ((rand() << 48) | (rand() << 32)) | (rand() << 16) + (test > 5 ? i : 0);
-			Keys.push_back(Key);
-			Erases.push_back(rand() % 2);
-		}
-
-		for (size_t i = 0; i < NumIteration; i++)
-		{
-			size_t second = rand() % NumIteration;
-			std::swap(Keys[i], Keys[second]);
-		}
-
-		{
-			CL_SCOPE_TIMER_LOCK(CLInsertTime);
-
-			for (size_t i = 0; i < NumIteration; i++)
-			{
-				size_t Key = Keys[i];
-				ClMap.Insert(Key, CL::ToString(int(Key)));
-			}
-		}
-
-		if(bTestStd)
-		{
-			CL_SCOPE_TIMER_LOCK(StdInsertTime);
-
-			for (size_t i = 0; i < NumIteration; i++)
-			{
-				size_t Key = Keys[i];
-				StdMap.insert(std::make_pair(Key, CL::ToString(int(Key))));
-			}
-		}
-
-		{
-			CL_SCOPE_TIMER_LOCK(CLSearchTime);
-
-			for (size_t i = 0; i < NumIteration; i++)
-			{
-				ClMap.Find(i);
-			}
-		}
-
-		if (bTestStd)
-		{
-			CL_SCOPE_TIMER_LOCK(StdSearchTime);
-
-			for (size_t i = 0; i < NumIteration; i++)
-			{
-				StdMap.find(i);
-			}
-		}
-
-		{
-			CL_SCOPE_TIMER_LOCK(CLEraseTimer);
-
-			size_t Index = 0;
-			for (auto it = ClMap.begin(); it != ClMap.end();)
-			{
-				if (Erases[Index++])
-				{
-					it = ClMap.Erase(it);
-				}
-				else
-				{
-					it++;
-				}
-			}
-		}
-
-		if (bTestStd)
-		{
-			CL_SCOPE_TIMER_LOCK(StdEraseTimer);
-
-			size_t Index = 0;
-			for (auto it = StdMap.begin(); it != StdMap.end();)
-			{
-				if (Erases[Index++])
-				{
-					it = StdMap.erase(it);
-				}
-				else
-				{
-					it++;
-				}
-			}
-		}
-
-		std::cout << "StdInsertTime = " << StdInsertTime.getLastTimeInMiliSeconds() << ", CLInsertTime = " << CLInsertTime.getLastTimeInMiliSeconds() << std::endl;
-		std::cout << "StdSearchTime = " << StdSearchTime.getLastTimeInMiliSeconds() << ", CLSearchTime = " << CLSearchTime.getLastTimeInMiliSeconds() << std::endl;
-		std::cout << "StdEraseTimer = " << StdEraseTimer.getLastTimeInMiliSeconds() << ", CLEraseTimer = " << CLEraseTimer.getLastTimeInMiliSeconds() << std::endl;
-		std::cout << "-----------" << std::endl;
+		TotalResult += Test;
+		Test.Print();
 	}
+
+	std::cout << "-------------------------------" << std::endl;
+	std::cout << "Total result ( iteration per test " << NumIterationPerTests << "):" << std::endl;
+	TotalResult.Print();
 
 	system("pause");
 
