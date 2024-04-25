@@ -11,6 +11,7 @@
 // #TODO CLConfig
 #define CL_ENABLE_PROBING_INSERT 0
 #define CL_HASH_MAP_USE_KEY_ARRAY 0
+#define CL_PARANOIDAL_DEBUG 0
 
 #if CL_ENABLE_PROBING_INSERT
 #define CL_HASH_MAP_MAX_PROBING_TAPS 4
@@ -434,42 +435,44 @@ namespace CL
 
 			while (pBucket)
 			{
-// #TODO optimize
-				for (size_t I = 0; I < pBucket->NumPairs; I++)
+				CL_DEBUG_ASSERT(pBucket->NumPairs > 0);
+				CL_DEBUG_ASSERT(pBucket->NumPairs <= CL_HASH_MAP_MAX_COLLISIONS);
+
+				HashMapPair** pPair = pBucket->Pairs;
+				HashMapPair** pLastPair = pPair + pBucket->NumPairs;
+
+				while (pPair != pLastPair)
 				{
-					HashMapPair* pPair = pBucket->Pairs[I];
-					if (pPair)
+					const size_t Index = (*pPair)->Hash % _HashMap.GetSize();
+
+					Bucket* pTargetBucket = _HashMap[Index];
+
+					if (!pTargetBucket)
 					{
-						const size_t Index = pPair->Hash % _HashMap.GetSize();
-						
-						if (!_HashMap[Index])
+						if (PoolSize > 0)
 						{
-							Bucket* pNewBucket;
-
-							if (PoolSize > 0)
-							{
-								PoolSize--;
-								pNewBucket = mBucketPool[PoolSize];
-							}
-							else
-							{
-								pNewBucket = _Bucket.Alloc();
-							}
-
-							_NumBuckets++;
-							_HashMap[Index] = pNewBucket;
-
-							if (_pFirstBucket)
-							{
-								_pFirstBucket->pPrevious = pNewBucket;
-								pNewBucket->pNext = _pFirstBucket;
-							}
-							
-							_pFirstBucket = pNewBucket;
+							PoolSize--;
+							pTargetBucket = mBucketPool[PoolSize];
+						}
+						else
+						{
+							pTargetBucket = _Bucket.Alloc();
 						}
 
-						_HashMap[Index]->Insert(pPair);
+						_NumBuckets++;
+						_HashMap[Index] = pTargetBucket;
+
+						if (_pFirstBucket)
+						{
+							_pFirstBucket->pPrevious = pTargetBucket;
+							pTargetBucket->pNext = _pFirstBucket;
+						}
+
+						_pFirstBucket = pTargetBucket;
 					}
+
+					pTargetBucket->Insert(*pPair);
+					pPair++;
 				}
 
 				Bucket* pOldBucket = pBucket;
