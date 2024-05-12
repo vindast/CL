@@ -31,6 +31,9 @@
 
 #include <CLString.h>
 
+// #TODO CL::HashMap: add template
+// #TODO CL::HashMap: add const iterator
+
 namespace CL
 {
 	typedef size_t KeyType;
