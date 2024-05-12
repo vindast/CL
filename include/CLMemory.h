@@ -3,7 +3,8 @@
 #include <CLObjects/CLCriticalSection.h>
 #include <unordered_map>
 
-#define CL_MEMORY_LEAK_DEBUG
+// #TODO CLConfig
+// #define CL_MEMORY_LEAK_DEBUG
 
 #ifdef CL_MEMORY_LEAK_DEBUG
 

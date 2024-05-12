@@ -2,6 +2,7 @@
 
 #include "CLMemoryLookUpTable.h"
 
+// #TODO CLConfig
 //#define CL_DEBUG_POOL
 
 #ifdef CL_DEBUG_POOL
