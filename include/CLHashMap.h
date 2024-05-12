@@ -504,6 +504,7 @@ namespace CL
 		void Clear()
 		{
 			_HashMap.Clear();
+			_HashMap.Resize(32, nullptr);
 
 			while (_pFirstBucket)
 			{
