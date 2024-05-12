@@ -323,14 +323,14 @@ namespace CL
 
 			if (float(_NumBuckets) / _HashMap.GetSize() > CL_HASH_MAP_LOAD_FACTOR)
 			{
-				ReHash();
+				ReHash(_HashMap.GetSize() * CL_HASH_MAP_REHASH_SIZE_MULTIPLIER);
 				Index = Hash % _HashMap.GetSize();
 			}
 
 			Bucket* pNewBucket = _HashMap[Index];
 			while (pNewBucket && !pNewBucket->IsAbleToInsert())
 			{
-				ReHash();
+				ReHash(_HashMap.GetSize() * CL_HASH_MAP_REHASH_SIZE_MULTIPLIER);
 				Index = Hash % _HashMap.GetSize();
 				pNewBucket = _HashMap[Index];
 			}
@@ -419,9 +419,8 @@ namespace CL
 			return nullptr;
 		}
 #endif
-		void ReHash()
+		void ReHash(size_t NewSize)
 		{
-			size_t NewSize = _HashMap.GetSize() * CL_HASH_MAP_REHASH_SIZE_MULTIPLIER;
 			_HashMap.Clear();
 			_HashMap.Resize(NewSize, nullptr);
 
