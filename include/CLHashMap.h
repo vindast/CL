@@ -32,6 +32,7 @@
 #include <CLString.h>
 
 // #TODO CL::HashMap: add direct hash map to increase searching performance with small amount of elements.
+// #TODO CL::HashMap: add Emplace method.
 
 namespace CL
 {
@@ -389,6 +390,10 @@ namespace CL
 			}
 
 			return HashMapConstIteratorType();
+		}
+		HashMapIteratorType Erase(const KeyType& Key)
+		{
+			return Erase(Find(Key));
 		}
 		HashMapIteratorType Erase(const HashMapConstIteratorType& It)
 		{
