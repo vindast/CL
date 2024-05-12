@@ -352,7 +352,7 @@ namespace CL
 		}
 		HashMapIteratorType Find(const KeyType& Key)
 		{
-			const size_t Hash = std::hash<size_t>{}(Key);
+			const size_t Hash = std::hash<KeyType>{}(Key);
 			size_t Index = Hash % _HashMap.GetSize();
 			BucketType* pBucket = _HashMap[Index];
 			if (pBucket)
@@ -372,7 +372,7 @@ namespace CL
 		}
 		HashMapConstIteratorType Find(const KeyType& Key) const
 		{
-			const size_t Hash = std::hash<size_t>{}(Key);
+			const size_t Hash = std::hash<KeyType>{}(Key);
 			size_t Index = Hash % _HashMap.GetSize();
 			const BucketType* pBucket = _HashMap[Index];
 			if (pBucket)
@@ -439,7 +439,7 @@ namespace CL
 		}
 		bool Insert(const HashMapPairType& InPair)
 		{
-			size_t Hash = std::hash<size_t>{}(InPair.Key);
+			size_t Hash = std::hash<KeyType>{}(InPair.Key);
 			size_t Index = Hash % _HashMap.GetSize();
 			BucketType* pBucket = _HashMap[Index];
 #if CL_HASH_MAP_USE_KEY_ARRAY
