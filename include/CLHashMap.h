@@ -395,6 +395,10 @@ namespace CL
 		{
 			return Erase(Find(Key));
 		}
+		HashMapIteratorType Erase(const HashMapIteratorType& It)
+		{
+			return Erase(HashMapConstIteratorType(It));
+		}
 		HashMapIteratorType Erase(const HashMapConstIteratorType& It)
 		{
 			BucketType* pBucket = const_cast<BucketType*>(It._pBucket);
@@ -497,7 +501,7 @@ namespace CL
 		{
 			return _NumElemetns;
 		}
-		void Clean()
+		void Clear()
 		{
 			_HashMap.Clear();
 
@@ -519,7 +523,7 @@ namespace CL
 		}
 		~HashMap()
 		{
-			Clean();
+			Clear();
 		}
 	private:
 #if CL_ENABLE_PROBING_INSERT
