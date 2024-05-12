@@ -433,6 +433,10 @@ namespace CL
 
 			return HashMapIteratorType();
 		}
+		bool Insert(const KeyType& Key, const ValueType& Value)
+		{
+			return Insert(HashMapPairType(Key, Value));
+		}
 		bool Insert(const HashMapPairType& InPair)
 		{
 			size_t Hash = std::hash<size_t>{}(InPair.Key);
