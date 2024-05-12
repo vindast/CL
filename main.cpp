@@ -12,8 +12,7 @@ struct HashMapPair
 	CL::String Value;
 };
 
-// #TODO add to the CL::HashMap const iterator and make the CL::HashMap& as constant.
-void Validate(std::vector<HashMapPair> mTestValues, const std::unordered_map<size_t, CL::String>& StdMap, CL::HashMap& ClMap)
+void Validate(std::vector<HashMapPair> mTestValues, const std::unordered_map<size_t, CL::String>& StdMap, CL::HashMap<size_t, CL::String>& ClMap)
 {
 	for (size_t i = 0; i < mTestValues.size(); i++)
 	{
@@ -31,7 +30,7 @@ void Validate(std::vector<HashMapPair> mTestValues, const std::unordered_map<siz
 
 			if (stdit != StdMap.end())
 			{
-				ClMap.Find(P.Key);
+				CL_ASSERT(ClMap.Find(P.Key) != ClMap.end());
 			}
 
 			CL_ASSERT(stdit == StdMap.end());
@@ -51,8 +50,7 @@ int main(int argc, const char* argv[])
 	srand(0);
 	bool bTestStd = true;
 
-	//CL::HashMap<size_t, CL::String> ClMap;
-	CL::HashMap ClMap;
+	CL::HashMap<size_t, CL::String> ClMap;
 	std::unordered_map<size_t, CL::String> StdMap;
 	std::vector<HashMapPair> mTestValues;
 
@@ -159,7 +157,7 @@ int main(int argc, const char* argv[])
 	{
 		for (size_t test = 0; test < NumIterationPerTests; test++)
 		{
-			CL::HashMap ClMap;
+			CL::HashMap<size_t, CL::String> ClMap;
 			std::unordered_map<size_t, CL::String> StdMap;
 
 			CL::Timer StdInsertTime, CLInsertTime;

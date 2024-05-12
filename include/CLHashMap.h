@@ -31,14 +31,16 @@
 
 #include <CLString.h>
 
-// #TODO CL::HashMap: add template
-// #TODO CL::HashMap: add const iterator
+// #TODO CL::HashMap: add direct hash map to increase searching performance with small amount of elements.
 
 namespace CL
 {
-	typedef size_t KeyType;
-	typedef CL::String ValueType;
+	template<class KeyType, class ValueType> struct HashMapPair;
+	template<class KeyType, class ValueType> struct HashMapBucket;
+	template<class KeyType, class ValueType> class HashMapIterator;
+	template<class KeyType, class ValueType> class HashMap;
 
+	template<class KeyType, class ValueType>
 	struct HashMapPair
 	{
 		HashMapPair() = default;
@@ -68,9 +70,12 @@ namespace CL
 		ValueType Value;
 	};
 
-	struct Bucket
+	template<class KeyType, class ValueType>
+	struct HashMapBucket
 	{
-		Bucket()
+		typedef HashMapPair<KeyType, ValueType> HashMapPairType;
+
+		HashMapBucket()
 		{
 			for (size_t I = 0; I < 4; I++)
 			{
@@ -85,7 +90,7 @@ namespace CL
 		size_t Hashes[CL_HASH_MAP_MAX_COLLISIONS];
 #endif
 		
-		HashMapPair* Pairs[CL_HASH_MAP_MAX_COLLISIONS];
+		HashMapPairType* Pairs[CL_HASH_MAP_MAX_COLLISIONS];
 #if CL_HASH_MAP_USE_KEY_ARRAY
 		size_t FindPair(const KeyType& Key) const
 #else
@@ -109,7 +114,7 @@ namespace CL
 
 			return CL_HASH_MAP_MAX_COLLISIONS;
 		}
-		void Insert(HashMapPair* pPair)
+		void Insert(HashMapPairType* pPair)
 		{
 			CL_DEBUG_ASSERT(NumPairs < CL_HASH_MAP_MAX_COLLISIONS);
 			Hashes[NumPairs] = pPair->Hash;
@@ -121,7 +126,7 @@ namespace CL
 			Pairs[NumPairs] = pPair;
 			NumPairs++;
 		}
-		void Erase(size_t Index, CL::Pool<HashMapPair>& PairsPool)
+		void Erase(size_t Index, CL::Pool<HashMapPairType>& PairsPool)
 		{
 			CL_DEBUG_ASSERT(NumPairs > 0);
 
@@ -140,16 +145,17 @@ namespace CL
 		bool IsAbleToInsert() const { return NumPairs < CL_HASH_MAP_MAX_COLLISIONS; }
 		bool IsEmpty() const { return NumPairs == 0; }
 		
-		Bucket* pNext = nullptr;
-		Bucket* pPrevious = nullptr;
+		HashMapBucket* pNext = nullptr;
+		HashMapBucket* pPrevious = nullptr;
 	};
 
+	template<class KeyType, class ValueType>
 	class HashMapIterator
 	{
-		typedef Bucket BucketType;
-		typedef HashMapPair ObjType;
-		typedef HashMapIterator Iterator;
-		friend class HashMap;
+		typedef HashMapBucket<KeyType, ValueType> BucketType;
+		typedef HashMapPair<KeyType, ValueType> HashMapPairType;
+		typedef HashMapIterator<KeyType, ValueType> Iterator;
+		friend class HashMap<KeyType, ValueType>;
 	public:
 		HashMapIterator() : _pBucket(nullptr)
 			, _Index(0)
@@ -179,22 +185,21 @@ namespace CL
 			{
 				_Index = 0;
 				_pBucket = _pBucket->pNext;
+			}
 		}
-
-		}
-		ObjType& operator*()
+		HashMapPairType& operator*() const
 		{
 			CL_DEBUG_ASSERT(_pBucket);
 			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
 			return *_pBucket->Pairs[_Index];
 		}
-		ObjType& operator ()()
+		HashMapPairType& operator ()() const
 		{
 			CL_DEBUG_ASSERT(_pBucket);
 			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
 			return *_pBucket->Pairs[_Index];
 		}
-		const KeyType& GetKey()
+		const KeyType& GetKey() const
 		{
 			CL_DEBUG_ASSERT(_pBucket);
 			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
@@ -231,27 +236,125 @@ namespace CL
 		size_t _Index;
 	};
 
+	template<class KeyType, class ValueType>
+	class HashMapConstIterator
+	{
+		typedef HashMapBucket<KeyType, ValueType> const BucketType;
+		typedef HashMapPair<KeyType, ValueType> const HashMapPairType;
+		typedef HashMapConstIterator<KeyType, ValueType> Iterator;
+		friend class HashMap<KeyType, ValueType>;
+	public:
+		HashMapConstIterator() : _pBucket(nullptr)
+			, _Index(0)
+		{
+
+		}
+		HashMapConstIterator(BucketType* pBucket, size_t Index) : _pBucket(pBucket), _Index(Index)
+		{
+
+		}
+		HashMapConstIterator(const HashMapIterator<KeyType, ValueType>& It) : _pBucket(It.GetBucket()), _Index(It.GetIndex())
+		{
+
+		}
+		Iterator& operator++(int)
+		{
+			Inc();
+			return *this;
+		}
+		Iterator& operator++()
+		{
+			Inc();
+			return *this;
+		}
+		void Inc()
+		{
+			CL_DEBUG_ASSERT(_pBucket);
+			CL_DEBUG_ASSERT(_Index < _pBucket->NumPairs);
+			_Index++;
+			if (_Index >= _pBucket->NumPairs)
+			{
+				_Index = 0;
+				_pBucket = _pBucket->pNext;
+			}
+		}
+		HashMapPairType& operator*() const
+		{
+			CL_DEBUG_ASSERT(_pBucket);
+			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
+			return *_pBucket->Pairs[_Index];
+		}
+		HashMapPairType& operator ()() const
+		{
+			CL_DEBUG_ASSERT(_pBucket);
+			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
+			return *_pBucket->Pairs[_Index];
+		}
+		const KeyType& GetKey() const
+		{
+			CL_DEBUG_ASSERT(_pBucket);
+			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
+			return _pBucket->Pairs[_Index]->Key;
+		}
+		ValueType& GetValue() const
+		{
+			CL_DEBUG_ASSERT(_pBucket);
+			CL_DEBUG_ASSERT(_Index < CL_HASH_MAP_MAX_COLLISIONS);
+			return _pBucket->Pairs[_Index]->Value;
+		}
+		operator bool() const
+		{
+			return _pBucket && _Index < _pBucket->NumPairs;
+		}
+		bool operator == (const Iterator& other) const
+		{
+			return _pBucket == other._pBucket && (_pBucket ? _Index == other._Index : true);
+		}
+		bool operator != (const Iterator& other) const
+		{
+			return _pBucket != other._pBucket || (_pBucket ? _Index != other._Index : false);
+		}
+		size_t GetIndex() const { return _Index; }
+		BucketType* GetBucket() const { return _pBucket; }
+	private:
+		BucketType* _pBucket;
+		size_t _Index;
+	};
+
+	template<class KeyType, class ValueType>
 	class HashMap
 	{
+		typedef HashMapIterator<KeyType, ValueType> HashMapIteratorType;
+		typedef HashMapConstIterator<KeyType, ValueType> HashMapConstIteratorType;
+		typedef HashMapBucket<KeyType, ValueType> BucketType;
+		typedef HashMapPair<KeyType, ValueType> HashMapPairType;
 	public:
 		HashMap() : _Bucket(32)
 			, _Pairs(32)
 		{
 			_HashMap.Resize(32, nullptr);
 		}
-		HashMapIterator begin()
+		HashMapIteratorType begin()
 		{
-			return HashMapIterator(_pFirstBucket, 0);
+			return HashMapIteratorType(_pFirstBucket, 0);
 		}
-		HashMapIterator end()
+		HashMapIteratorType end()
 		{
-			return HashMapIterator();
+			return HashMapIteratorType();
 		}
-		HashMapIterator Find(const KeyType& Key)
+		HashMapConstIteratorType begin() const
+		{
+			return HashMapConstIteratorType(_pFirstBucket, 0);
+		}
+		HashMapConstIteratorType end() const
+		{
+			return HashMapConstIteratorType();
+		}
+		HashMapIteratorType Find(const KeyType& Key)
 		{
 			const size_t Hash = std::hash<size_t>{}(Key);
 			size_t Index = Hash % _HashMap.GetSize();
-			Bucket* pBucket = _HashMap[Index];
+			BucketType* pBucket = _HashMap[Index];
 			if (pBucket)
 			{
 #if CL_HASH_MAP_USE_KEY_ARRAY
@@ -261,15 +364,35 @@ namespace CL
 #endif	
 				if (Index < CL_HASH_MAP_MAX_COLLISIONS)
 				{
-					return HashMapIterator(pBucket, Index);
+					return HashMapIteratorType(pBucket, Index);
 				}
 			}
 
-			return HashMapIterator();
+			return HashMapIteratorType();
 		}
-		HashMapIterator Erase(HashMapIterator It)
+		HashMapConstIteratorType Find(const KeyType& Key) const
 		{
-			Bucket* pBucket = It._pBucket;
+			const size_t Hash = std::hash<size_t>{}(Key);
+			size_t Index = Hash % _HashMap.GetSize();
+			const BucketType* pBucket = _HashMap[Index];
+			if (pBucket)
+			{
+#if CL_HASH_MAP_USE_KEY_ARRAY
+				Index = pBucket->FindPair(Key);
+#else
+				Index = pBucket->FindPair(Key, Hash);
+#endif	
+				if (Index < CL_HASH_MAP_MAX_COLLISIONS)
+				{
+					return HashMapConstIteratorType(pBucket, Index);
+				}
+			}
+
+			return HashMapConstIteratorType();
+		}
+		HashMapIteratorType Erase(const HashMapConstIteratorType& It)
+		{
+			BucketType* pBucket = const_cast<BucketType*>(It._pBucket);
 
 			if (pBucket)
 			{
@@ -279,7 +402,7 @@ namespace CL
 
 				if (pBucket->IsEmpty())
 				{
-					Bucket* pNextBucket = pBucket->pNext;
+					BucketType* pNextBucket = pBucket->pNext;
 
 					if (pBucket->pNext)
 					{
@@ -300,21 +423,21 @@ namespace CL
 					_HashMap[Hash % _HashMap.GetSize()] = nullptr;
 					_NumBuckets--;
 
-					return HashMapIterator(pNextBucket, 0);
+					return HashMapIteratorType(pNextBucket, 0);
 				}
 				else
 				{
-					return It ? It : HashMapIterator(pBucket->pNext, 0);
+					return It ? HashMapIteratorType(pBucket, It.GetIndex()) : HashMapIteratorType(pBucket->pNext, 0);
 				}
 			}
 
-			return HashMapIterator();
+			return HashMapIteratorType();
 		}
-		bool Insert(const HashMapPair& InPair)
+		bool Insert(const HashMapPairType& InPair)
 		{
 			size_t Hash = std::hash<size_t>{}(InPair.Key);
 			size_t Index = Hash % _HashMap.GetSize();
-			Bucket* pBucket = _HashMap[Index];
+			BucketType* pBucket = _HashMap[Index];
 #if CL_HASH_MAP_USE_KEY_ARRAY
 			if (pBucket && pBucket->FindPair(InPair.Key) < CL_HASH_MAP_MAX_COLLISIONS)
 #else
@@ -330,7 +453,7 @@ namespace CL
 				Index = Hash % _HashMap.GetSize();
 			}
 
-			Bucket* pNewBucket = _HashMap[Index];
+			BucketType* pNewBucket = _HashMap[Index];
 			while (pNewBucket && !pNewBucket->IsAbleToInsert())
 			{
 				ReHash(_HashMap.GetSize() * CL_HASH_MAP_REHASH_SIZE_MULTIPLIER);
@@ -353,7 +476,7 @@ namespace CL
 				_HashMap[Index] = pNewBucket;
 			}
 
-			HashMapPair* pPair = _Pairs.Alloc(InPair);
+			HashMapPairType* pPair = _Pairs.Alloc(InPair);
 			pPair->Hash = Hash;
 			pNewBucket->Insert(pPair);
 
@@ -376,7 +499,7 @@ namespace CL
 					_Pairs.Free(_pFirstBucket->Pairs[I]);
 				}
 
-				Bucket* pOldBucket = _pFirstBucket;
+				BucketType* pOldBucket = _pFirstBucket;
 				_pFirstBucket = _pFirstBucket->pNext;
 				_Bucket.Free(pOldBucket);
 			}
@@ -402,7 +525,7 @@ namespace CL
 
 			return _HashMap[Index] ? -1 : Index;
 		}
-		Bucket* ProbingSearch(size_t& StartIndex, const KeyType& Key) const
+		BucketType* ProbingSearch(size_t& StartIndex, const KeyType& Key) const
 		{
 			size_t Index = 0;
 
@@ -410,7 +533,7 @@ namespace CL
 			{
 				Index = (StartIndex + (i + i * i) / 2) % _HashMap.GetSize();
 
-				Bucket* pBucket = _HashMap[Index];
+				BucketType* pBucket = _HashMap[Index];
 
 				if (pBucket && pBucket->Pair.Key == Key)
 				{
@@ -429,10 +552,10 @@ namespace CL
 
 			CL_DEBUG_ASSERT(_HashMap.GetSize() == NewSize);
 
-			Bucket* pBucket = _pFirstBucket;
+			BucketType* pBucket = _pFirstBucket;
 
 			_pFirstBucket = nullptr;
-			Bucket* mBucketPool[CL_HASH_MAP_MAX_REHASH_POOL_SIZE];
+			BucketType* mBucketPool[CL_HASH_MAP_MAX_REHASH_POOL_SIZE];
 			size_t PoolSize = 0;
 
 			while (pBucket)
@@ -440,14 +563,14 @@ namespace CL
 				CL_DEBUG_ASSERT(pBucket->NumPairs > 0);
 				CL_DEBUG_ASSERT(pBucket->NumPairs <= CL_HASH_MAP_MAX_COLLISIONS);
 
-				HashMapPair** pPair = pBucket->Pairs;
-				HashMapPair** pLastPair = pPair + pBucket->NumPairs;
+				HashMapPairType** pPair = pBucket->Pairs;
+				HashMapPairType** pLastPair = pPair + pBucket->NumPairs;
 
 				while (pPair != pLastPair)
 				{
 					const size_t Index = (*pPair)->Hash % _HashMap.GetSize();
 
-					Bucket* pTargetBucket = _HashMap[Index];
+					BucketType* pTargetBucket = _HashMap[Index];
 
 					if (!pTargetBucket)
 					{
@@ -477,7 +600,7 @@ namespace CL
 					pPair++;
 				}
 
-				Bucket* pOldBucket = pBucket;
+				BucketType* pOldBucket = pBucket;
 				pBucket = pBucket->pNext;
 
 				if (PoolSize < CL_HASH_MAP_MAX_REHASH_POOL_SIZE)
@@ -519,10 +642,10 @@ namespace CL
 
 		size_t _NumElemetns = 0;
 		size_t _NumBuckets = 0;
-		Bucket* _pFirstBucket = nullptr;
+		BucketType* _pFirstBucket = nullptr;
 
-		CL::Pool<HashMapPair> _Pairs;
-		CL::Pool<Bucket> _Bucket;
-		CL::Vector<Bucket*> _HashMap;
+		CL::Pool<HashMapPairType> _Pairs;
+		CL::Pool<BucketType> _Bucket;
+		CL::Vector<BucketType*> _HashMap;
 	};
 }

@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 // #TODO CLConfig
-// #define CL_MEMORY_LEAK_DEBUG
+#define CL_MEMORY_LEAK_DEBUG
 
 #ifdef CL_MEMORY_LEAK_DEBUG
 
