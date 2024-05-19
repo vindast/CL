@@ -96,4 +96,21 @@ namespace CL
 
 		return String(buf, w);
 	}
+
+	void SplitBy(CL::Vector<CL::String>& OutStrings, CL::String SourseString, char SplitSymbol)
+	{
+		size_t SeparatorPosition;
+
+		while ((SeparatorPosition = SourseString.FindFirst(SplitSymbol)) != CL::String::NullPos())
+		{
+			CL::String Str = SourseString.Substring(0, SeparatorPosition);
+			OutStrings.PushBack(Str);
+			SourseString = SourseString.Substring(SeparatorPosition + 1);
+		}
+
+		if (!SourseString.IsEmpty())
+		{
+			OutStrings.PushBack(SourseString);
+		}
+	}
 }
