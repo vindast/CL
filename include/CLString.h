@@ -23,6 +23,8 @@ namespace CL
 		char mStr[sizeof(StringData)];
 	};
 
+// #TODO conversion to char* operator
+
 	class String final
 	{
 		friend static String operator+(const String& lefth, const String& right);
