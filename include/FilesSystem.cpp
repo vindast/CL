@@ -239,12 +239,27 @@ namespace CL
 				{
 					if (!(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
 					{
+						const CL::String LocalPath = Path + FindFileData.cFileName;
+
 						if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 						{
-							if (bScanDirectoryes && !IsInList(IgnoreFolders, FindFileData.cFileName))
+							auto FindAnyOf = [](const CL::String& SourceString, const CL::List<CL::String>& StrList)
+							{
+								for (const CL::String& String : StrList)
+								{
+									if (SourceString.FindFirst(String) != CL::String::NullPos())
+									{
+										return true;
+									}
+								}
+
+								return false;
+							};
+
+							if (bScanDirectoryes && !FindAnyOf(LocalPath, IgnoreFolders))
 							{
 								CL::FDPath f;
-								f.Path = Path + FindFileData.cFileName;
+								f.Path = LocalPath;
 								f.bIsFile = false;
 								DirrectoriesAndFiles.PushBack(f);
 							}
@@ -257,7 +272,7 @@ namespace CL
 							if (FileExts.IsEmpty() || IsInList(FileExts, Ext))
 							{
 								CL::FDPath f;
-								f.Path = Path + FindFileData.cFileName;
+								f.Path = LocalPath;
 								f.bIsFile = true;
 								DirrectoriesAndFiles.PushBack(f);
 							}
