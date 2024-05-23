@@ -122,15 +122,16 @@ namespace CL
 		typedef ListConstForwardIterator<ObjType> ConstForwardIterator;
 		typedef TwoLinkedNode<ObjType> ListNode;
 
-		List(CL::RefPtr<Pool<ListNode>>& pAllocator = CL::RefPtr<Pool<ListNode>>::MakeRefPtr(256)):
-			_pAllocator(pAllocator), _pFirst(nullptr), _pLast(nullptr), _nElementsCount(0)
+		List(size_t DefaultAllocatorBlock = 16):
+			_pAllocator(CL::RefPtr<Pool<ListNode>>::MakeRefPtr(DefaultAllocatorBlock)), _pFirst(nullptr), _pLast(nullptr), _nElementsCount(0)
 		{
 
 		}
-		List(const List& Other)
+		List(const List& Other, size_t DefaultAllocatorBlock = 16) : _pAllocator(nullptr), _pFirst(nullptr), _pLast(nullptr), _nElementsCount(0)
 		{
 			if (Other.IsEmpty())
 			{
+				_pAllocator = CL::RefPtr<Pool<ListNode>>::MakeRefPtr(DefaultAllocatorBlock);
 				return;
 			}
 
