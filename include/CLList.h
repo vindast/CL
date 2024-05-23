@@ -127,7 +127,7 @@ namespace CL
 		{
 
 		}
-		List(const List& Other, size_t DefaultAllocatorBlock = 16) : _pAllocator(nullptr), _pFirst(nullptr), _pLast(nullptr), _nElementsCount(0)
+		List(const List& Other, size_t DefaultAllocatorBlock = 16) : _pFirst(nullptr), _pLast(nullptr), _nElementsCount(0)
 		{
 			if (Other.IsEmpty())
 			{
