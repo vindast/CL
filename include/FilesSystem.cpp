@@ -189,10 +189,11 @@ namespace CL
 		return Buffer;
 	}
 
-	List<String> ExtractPath(String Directory)
+	List<String> ExtractPath(String Directory, bool bAppendLastAways)
 	{
 		List<String> Path;
 		size_t SplitPosition = String::NullPos();
+		size_t LastSplitPosition = String::NullPos();
 
 		while ((SplitPosition = Directory.FindFirst("/")) != String::NullPos() || (SplitPosition = Directory.FindFirst("\\")) != String::NullPos())
 		{
@@ -200,14 +201,21 @@ namespace CL
 
 			Path.PushBack(Directory.Substring(0, SplitPosition));
 
+			// #TODO optimize
 			if (Directory.GetLength() > SplitPosition + Offset)
 			{
 				Directory = Directory.Substring(SplitPosition + Offset);
+				LastSplitPosition = SplitPosition;
 			}
 			else
 			{
 				break;
 			}
+		}
+
+		if (Directory.GetLength() > 0 && bAppendLastAways)
+		{
+			Path.PushBack(Directory);
 		}
 
 		return Path;

@@ -59,7 +59,7 @@ namespace CL
 	String GetWorkingDirectory();
 
 	//Split Directory by "\\" or by "/" and return path as list
-	CL::List<CL::String> ExtractPath(CL::String Directory);
+	CL::List<CL::String> ExtractPath(CL::String Directory, bool bAppendLastAways = false);
 
 	void EnumerateFileAndFolders(
 		const CL::String& Path,
