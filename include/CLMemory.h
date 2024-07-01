@@ -66,6 +66,7 @@ namespace CL
 {
 	enum class EMemoryType
 	{
+		mem_empty,
 		mem_new,
 		mem_new_array,
 		mem_placement_new,
@@ -77,19 +78,21 @@ namespace CL
 		struct MemoryData
 		{
 			void* pMemory;
-			EMemoryType Type;
+			EMemoryType Type = EMemoryType::mem_empty;
 			const char* pDebugStr;
 			size_t Size;
+
+			EMemoryType PreviousType;
+			const char* pPreviousDebugStr;
+			size_t PreviousSize;
+
+			void Empty();
 		};
 
 		struct MemoryLeakData
 		{
 			MemoryLeakData() = default;
-			MemoryLeakData(size_t InCount, size_t InSize) :
-				Count(InCount), Size(InSize)
-			{
-
-			}
+			MemoryLeakData(size_t InCount, size_t InSize);
 
 			size_t Count = 0;
 			size_t Size = 0;

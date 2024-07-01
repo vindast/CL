@@ -1,7 +1,7 @@
 #include "CLMemory.h"
-#include <unordered_set>
 #include "Logger/Logger.h"
-#include <iostream>
+
+// #TODO code cleanup
 
 namespace CL
 {
@@ -161,6 +161,31 @@ namespace CL
 			Logger::pushMessageFormated("	Fail to find %d memory address!", size_t(pMemory));
 			Logger::pushMessageFormated("	Memory type is %s", MemoryTypeToSTR(Type));
 			Logger::pushMessageFormated("	Call from %s", pDebugStr);
+
+			if (IsPlacementType(Type))
+			{
+				bool bMemBlockFound = false;
+
+				for (auto It: _MemoryTable)
+				{
+					const MemoryData& MemData = It.second;
+
+					if (MemData.pMemory <= pMemory && pMemory <= (char*)MemData.pMemory + MemData.Size)
+					{
+						CL_ASSERT(!bMemBlockFound);
+						bMemBlockFound = true;
+						Logger::pushMessageFormated("	Source memory block  address %d", size_t(MemData.pMemory));
+						Logger::pushMessageFormated("	Memory type is %s", MemoryTypeToSTR(MemData.Type));
+						Logger::pushMessageFormated("	Call from %s", MemData.pDebugStr);
+					}
+				}
+
+				if (!bMemBlockFound)
+				{
+					Logger::write("	Can`t find source memory block location!");
+				}
+			}
+
 			CL_CRASH();
 		}
 
@@ -197,5 +222,18 @@ namespace CL
 		}
 
 		return UniqueLeaks;
+	}
+	
+	void MemoryController::MemoryData::Empty()
+	{
+		PreviousType = Type;
+		pPreviousDebugStr = pDebugStr;
+		Type = EMemoryType::mem_empty;
+	}
+
+	MemoryController::MemoryLeakData::MemoryLeakData(size_t InCount, size_t InSize) :
+		Count(InCount), Size(InSize)
+	{
+
 	}
 }
