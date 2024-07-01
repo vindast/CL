@@ -180,6 +180,20 @@ namespace CL
 					}
 				}
 
+				for (auto It : _PlacementNewMemoryTable)
+				{
+					const MemoryData& MemData = It.second;
+
+					if (MemData.pMemory <= pMemory && pMemory <= (char*)MemData.pMemory + MemData.Size)
+					{
+						CL_ASSERT(!bMemBlockFound);
+						bMemBlockFound = true;
+						Logger::pushMessageFormated("	Source memory block  address %d", size_t(MemData.pMemory));
+						Logger::pushMessageFormated("	Memory type is %s", MemoryTypeToSTR(MemData.Type));
+						Logger::pushMessageFormated("	Call from %s", MemData.pDebugStr);
+					}
+				}
+
 				if (!bMemBlockFound)
 				{
 					Logger::write("	Can`t find source memory block location!");
