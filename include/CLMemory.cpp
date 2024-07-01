@@ -237,13 +237,6 @@ namespace CL
 
 		return UniqueLeaks;
 	}
-	
-	void MemoryController::MemoryData::Empty()
-	{
-		PreviousType = Type;
-		pPreviousDebugStr = pDebugStr;
-		Type = EMemoryType::mem_empty;
-	}
 
 	MemoryController::MemoryLeakData::MemoryLeakData(size_t InCount, size_t InSize) :
 		Count(InCount), Size(InSize)

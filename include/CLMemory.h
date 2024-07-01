@@ -81,12 +81,6 @@ namespace CL
 			EMemoryType Type = EMemoryType::mem_empty;
 			const char* pDebugStr;
 			size_t Size;
-
-			EMemoryType PreviousType;
-			const char* pPreviousDebugStr;
-			size_t PreviousSize;
-
-			void Empty();
 		};
 
 		struct MemoryLeakData
