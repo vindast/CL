@@ -190,28 +190,6 @@ namespace CL
 			{
 				pObj = _pFirstFreeBlock->Alloc();
 				 
-				if (_pFirstFreeBlock->IsFull())
-				{
-					CL_DEBUG_ASSERT(!_pFirstFreeBlock->pPrevios);
-					 
-					if (_pFirstFreeBlock->pNext)
-					{
-						_pFirstFreeBlock->pNext->pPrevios = nullptr;
-					}
-
-					__PoolElementsBlock<ObjType>* pBlock = _pFirstFreeBlock; 
-					_pFirstFreeBlock = _pFirstFreeBlock->pNext;
-
-					if (_pFirstFullBlock)
-					{
-						CL_DEBUG_ASSERT(!_pFirstFullBlock->pPrevios);
-						_pFirstFullBlock->pPrevios = pBlock;
-					}
-
-					pBlock->pNext = _pFirstFullBlock;
-					_pFirstFullBlock = pBlock; 
-				}
-				 
 #ifdef CL_DEBUG_POOL
 				BlockTotalValidation();
 #endif
@@ -232,6 +210,32 @@ namespace CL
 				BlockTotalValidation();
 #endif
 			} 
+
+			if (_pFirstFreeBlock->IsFull())
+			{
+				CL_DEBUG_ASSERT(!_pFirstFreeBlock->pPrevios);
+
+				if (_pFirstFreeBlock->pNext)
+				{
+					_pFirstFreeBlock->pNext->pPrevios = nullptr;
+				}
+
+				__PoolElementsBlock<ObjType>* pBlock = _pFirstFreeBlock;
+				_pFirstFreeBlock = _pFirstFreeBlock->pNext;
+
+				if (_pFirstFullBlock)
+				{
+					CL_DEBUG_ASSERT(!_pFirstFullBlock->pPrevios);
+					_pFirstFullBlock->pPrevios = pBlock;
+				}
+
+				pBlock->pNext = _pFirstFullBlock;
+				_pFirstFullBlock = pBlock;
+			}
+
+#ifdef CL_DEBUG_POOL
+			BlockTotalValidation();
+#endif
 
 			CL_PLACEMENT_NEW(pObj, ObjType, params...);
 			return pObj;
