@@ -44,10 +44,12 @@ namespace CL
 		RefPtr() = default;
 		RefPtr(const RefPtr<Object>& ptr) noexcept
 		{
+			CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 			SetNewCounter(ptr._pContainer);
 		}
 		RefPtr(RefPtr<Object>&& ptr) noexcept
 		{
+			CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 			_pContainer = ptr._pContainer;
 			ptr._pContainer = nullptr;
 		}
@@ -55,6 +57,7 @@ namespace CL
 		{
 			if (this != &ptr)
 			{
+				CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 				SetNewCounter(ptr._pContainer);
 			}
 
@@ -62,6 +65,7 @@ namespace CL
 		}
 		RefPtr<Object>& operator = (RefPtr<Object>&& ptr)
 		{
+			CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 			Free();
 			_pContainer = ptr._pContainer;
 			ptr._pContainer = nullptr;
@@ -101,6 +105,8 @@ namespace CL
 			{
 				return;
 			}
+
+			CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 
 			if ((_pContainer->_RefCount--) == 0)
 			{
@@ -159,10 +165,12 @@ namespace CL
 		ObserverPtr() = default;
 		ObserverPtr(const ObserverPtr& ptr) noexcept
 		{
+			CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 			SetNewCounter(ptr._pContainer);
 		}
 		ObserverPtr(ObserverPtr&& ptr) noexcept
 		{
+			CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 			_pContainer = ptr._pContainer;
 			ptr._pContainer = nullptr;
 		}
@@ -170,24 +178,28 @@ namespace CL
 		{
 			if (this != &ptr)
 			{
+				CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 				SetNewCounter(ptr._pContainer);
 			}
 
 			return *this;
 		}
 		ObserverPtr& operator = (ObserverPtr&& ptr)
-		{ 
+		{
+			CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 			SetNewCounter(ptr._pContainer);
 			return *this;
 		}
 		template<class Object>
 		ObserverPtr(const RefPtr<Object>& ptr) noexcept
 		{
+			CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 			SetNewCounter(ptr._pContainer);
 		}
 		template<class Object>
 		ObserverPtr(RefPtr<Object>&& ptr) noexcept
 		{
+			CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 			_pContainer = ptr._pContainer;
 			ptr._pContainer = nullptr;
 		}
@@ -211,6 +223,8 @@ namespace CL
 			{
 				return;
 			}
+
+			CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 
 			if ((_pContainer->_RefCount--) == 0)
 			{

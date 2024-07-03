@@ -1,5 +1,6 @@
 #pragma once
 #include "CLMacroHelper.h"
+#include "CLObjects/CLCriticalSection.h"
 
 namespace CL
 {
@@ -23,4 +24,7 @@ namespace CL
 
 	//CRC32 from https://habr.com/ru/articles/38622/
 	unsigned long Crc32(const unsigned char* Buff, size_t Length);
+
+	// #TODO make refptr lock-free implementation
+	CL::CriticalSection& GetRefPtrCriticalSection();
 }

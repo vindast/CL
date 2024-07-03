@@ -25,4 +25,11 @@ namespace CL
 
 		return crc ^ 0xFFFFFFFFUL;
 	}
+
+	// #TODO make refptr lock-free implementation
+	CL::CriticalSection& GetRefPtrCriticalSection()
+	{
+		static CL::CriticalSection CS;
+		return CS;
+	}
 }
