@@ -108,7 +108,7 @@ namespace CL
 
 			CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 
-			if ((_pContainer->_RefCount--) == 0)
+			if ((--_pContainer->_RefCount) == 0)
 			{
 				CL_DELETE(_pContainer);
 			}
@@ -226,7 +226,7 @@ namespace CL
 
 			CL_SCOPE_LOCK_GUARD(GetRefPtrCriticalSection());
 
-			if ((_pContainer->_RefCount--) == 0)
+			if ((--_pContainer->_RefCount) == 0)
 			{
 				CL_DELETE(_pContainer);
 			}
