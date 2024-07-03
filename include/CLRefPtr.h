@@ -9,29 +9,29 @@ namespace CL
 	template<class Object> class RefPtr;
 	class ObserverPtr;
 
-	class RefPtrCounterBase
+	class RefPtrContanerBase
 	{  
 	public:
-		explicit RefPtrCounterBase() = default;
-		virtual ~RefPtrCounterBase() = default;  
+		explicit RefPtrContanerBase() = default;
+		virtual ~RefPtrContanerBase() = default;  
 
 		std::atomic_size_t _RefCount = 0;
 	private:
-		RefPtrCounterBase(const RefPtrCounterBase&) = delete;
-		RefPtrCounterBase& operator = (const RefPtrCounterBase&) = delete; 
+		RefPtrContanerBase(const RefPtrContanerBase&) = delete;
+		RefPtrContanerBase& operator = (const RefPtrContanerBase&) = delete; 
 	};
 
 	template<class Object>
-	class RefPtrCounter final : public RefPtrCounterBase
+	class RefPtrContainer final : public RefPtrContanerBase
 	{ 
 	public:
 		template<class... Args>
-		RefPtrCounter(Args&&... args):
+		RefPtrContainer(Args&&... args):
 			_Object(args...)
 		{
 
 		} 
-		~RefPtrCounter() = default; 
+		~RefPtrContainer() = default; 
 
 		Object _Object;
 	};
@@ -44,18 +44,18 @@ namespace CL
 		RefPtr() = default;
 		RefPtr(const RefPtr<Object>& ptr) noexcept
 		{
-			SetNewCounter(ptr._pCounter);
+			SetNewCounter(ptr._pContainer);
 		}
 		RefPtr(RefPtr<Object>&& ptr) noexcept
 		{
-			_pCounter = ptr._pCounter;
-			ptr._pCounter = nullptr;
+			_pContainer = ptr._pContainer;
+			ptr._pContainer = nullptr;
 		}
 		RefPtr<Object>& operator = (const RefPtr<Object>& ptr)
 		{
 			if (this != &ptr)
 			{
-				SetNewCounter(ptr._pCounter);
+				SetNewCounter(ptr._pContainer);
 			}
 
 			return *this;
@@ -63,69 +63,67 @@ namespace CL
 		RefPtr<Object>& operator = (RefPtr<Object>&& ptr)
 		{
 			Free();
-			_pCounter = ptr._pCounter;
-			ptr._pCounter = nullptr;
+			_pContainer = ptr._pContainer;
+			ptr._pContainer = nullptr;
 			return *this;
 		}
 		template<class ... Args>
 		static RefPtr<Object> MakeRefPtr(Args... args)
 		{
 			RefPtr<Object> ptr;
-			ptr._pCounter = CL_NEW( RefPtrCounter<Object>, args...); 
-			ptr._pCounter->_RefCount = 1;
+			ptr._pContainer = CL_NEW( RefPtrContainer<Object>, args...); 
+			ptr._pContainer->_RefCount = 1;
 			return ptr;
 		}
 		Object& operator* ()
 		{
 			CL_ASSERT(IsValid());
-			return _pCounter->_Object;
+			return _pContainer->_Object;
 		}
 		const Object& operator* () const
 		{
 			CL_ASSERT(IsValid());
-			return _pCounter->_Object;
+			return _pContainer->_Object;
 		}
 		Object* operator -> ()
 		{
 			CL_ASSERT(IsValid());
-			return &_pCounter->_Object;
+			return &_pContainer->_Object;
 		}
 		const Object* operator -> () const
 		{ 
 			CL_ASSERT(IsValid());
-			return &_pCounter->_Object;
+			return &_pContainer->_Object;
 		}
 		void Free()
 		{
-			if (!_pCounter)
+			if (!_pContainer)
 			{
 				return;
 			}
 
-			size_t count = --_pCounter->_RefCount;
-
-			if (!_pCounter->_RefCount && !count)
+			if ((_pContainer->_RefCount--) == 0)
 			{
-				CL_DELETE(_pCounter);
+				CL_DELETE(_pContainer);
 			}
 
-			_pCounter = nullptr;
+			_pContainer = nullptr;
 		}
 		Object* Data()
 		{
-			return IsValid() ? &_pCounter->_Object : nullptr;
+			return IsValid() ? &_pContainer->_Object : nullptr;
 		}
 		const Object* Data() const
 		{
-			return IsValid() ? &_pCounter->_Object : nullptr;
+			return IsValid() ? &_pContainer->_Object : nullptr;
 		}
 		size_t GetRefCount() const
 		{ 
-			return _pCounter->_RefCount;
+			return _pContainer->_RefCount;
 		} 
 		bool IsValid() const
 		{
-			return _pCounter;
+			return _pContainer;
 		}
 		operator bool() const
 		{
@@ -136,21 +134,21 @@ namespace CL
 			Free();
 		}
 	private:
-		RefPtrCounter<Object>* _pCounter = nullptr;
+		RefPtrContainer<Object>* _pContainer = nullptr;
 
-		void SetNewCounter(RefPtrCounter<Object>* pCounter)
+		void SetNewCounter(RefPtrContainer<Object>* pContainer)
 		{
-			if (pCounter == _pCounter)
+			if (pContainer == _pContainer)
 			{
 				return;
 			}
 
 			Free();
 
-			if (pCounter)
+			if (pContainer)
 			{
-				_pCounter = pCounter;
-				_pCounter->_RefCount++;
+				_pContainer = pContainer;
+				_pContainer->_RefCount++;
 			}
 		}
 	};
@@ -161,92 +159,90 @@ namespace CL
 		ObserverPtr() = default;
 		ObserverPtr(const ObserverPtr& ptr) noexcept
 		{
-			SetNewCounter(ptr._pCounter);
+			SetNewCounter(ptr._pContainer);
 		}
 		ObserverPtr(ObserverPtr&& ptr) noexcept
 		{
-			_pCounter = ptr._pCounter;
-			ptr._pCounter = nullptr;
+			_pContainer = ptr._pContainer;
+			ptr._pContainer = nullptr;
 		}
 		ObserverPtr& operator = (const ObserverPtr& ptr)
 		{
 			if (this != &ptr)
 			{
-				SetNewCounter(ptr._pCounter);
+				SetNewCounter(ptr._pContainer);
 			}
 
 			return *this;
 		}
 		ObserverPtr& operator = (ObserverPtr&& ptr)
 		{ 
-			SetNewCounter(ptr._pCounter);
+			SetNewCounter(ptr._pContainer);
 			return *this;
 		}
 		template<class Object>
 		ObserverPtr(const RefPtr<Object>& ptr) noexcept
 		{
-			SetNewCounter(ptr._pCounter);
+			SetNewCounter(ptr._pContainer);
 		}
 		template<class Object>
 		ObserverPtr(RefPtr<Object>&& ptr) noexcept
 		{
-			_pCounter = ptr._pCounter;
-			ptr._pCounter = nullptr;
+			_pContainer = ptr._pContainer;
+			ptr._pContainer = nullptr;
 		}
 		template<class Object>
 		ObserverPtr& operator = (const RefPtr<Object>& ptr)
 		{
-			SetNewCounter(ptr._pCounter);
+			SetNewCounter(ptr._pContainer);
 			return *this;
 		}
 		template<class Object>
 		ObserverPtr& operator = (RefPtr<Object>&& ptr)
 		{
 			Free();
-			_pCounter = ptr._pCounter;
-			ptr._pCounter = nullptr;
+			_pContainer = ptr._pContainer;
+			ptr._pContainer = nullptr;
 			return *this;
 		} 
 		void Free()
 		{
-			if (!_pCounter)
+			if (!_pContainer)
 			{
 				return;
 			}
 
-			size_t count = --_pCounter->_RefCount;
-
-			if (!_pCounter->_RefCount && !count)
+			if ((_pContainer->_RefCount--) == 0)
 			{
-				CL_DELETE(_pCounter);
+				CL_DELETE(_pContainer);
 			}
 
-			_pCounter = nullptr;
+			_pContainer = nullptr;
 		}
-		bool IsValid() const { return _pCounter && _pCounter->_RefCount; }
+		bool IsValid() const { return _pContainer && _pContainer->_RefCount; }
 		operator bool() const { return IsValid(); }
 		~ObserverPtr()
 		{
 			Free();
 		}
 	private:
-		void SetNewCounter(RefPtrCounterBase* pCounter)
+		void SetNewCounter(RefPtrContanerBase* pContainer)
 		{
-			if (pCounter == _pCounter)
+			if (pContainer == _pContainer)
 			{
 				return;
 			}
 
 			Free();
 
-			if (pCounter)
+			if (pContainer)
 			{
-				_pCounter = pCounter;
-				_pCounter->_RefCount++;
+				_pContainer = pContainer;
+				_pContainer->_RefCount++;
 			}
 		}
 
-		RefPtrCounterBase* _pCounter = nullptr;
+		RefPtrContanerBase* _pContainer = nullptr;
 	};
 
 	template<class Object>
@@ -264,31 +260,31 @@ namespace CL
 	template<class Object>
 	bool operator == (const ObserverPtr& A, const RefPtr<Object>& B)
 	{
-		return A._pCounter == B.Data();
+		return A._pContainer == B.Data();
 	}
 
 	template<class Object>
 	bool operator != (const ObserverPtr& A, const RefPtr<Object>& B)
 	{
-		return A._pCounter != B.Data();
+		return A._pContainer != B.Data();
 	}
 
 	template<class Object>
 	bool operator == (const RefPtr<Object&> A, const ObserverPtr& B)
 	{
-		return A.Data() == B._pCounter;
+		return A.Data() == B._pContainer;
 	}
 
 	template<class Object>
 	bool operator != (const RefPtr<Object&> A, const ObserverPtr& B)
 	{
-		return A.Data() != B._pCounter;
+		return A.Data() != B._pContainer;
 	}
 
 	template<class Object>
 	bool operator < (const RefPtr<Object&> A, const ObserverPtr& B)
 	{
-		return A.Data() < B._pCounter;
+		return A.Data() < B._pContainer;
 	}
 }
 
