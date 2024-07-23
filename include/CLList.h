@@ -121,6 +121,7 @@ namespace CL
 		typedef ListForwardIterator<ObjType> ForwardIterator;
 		typedef ListConstForwardIterator<ObjType> ConstForwardIterator;
 		typedef TwoLinkedNode<ObjType> ListNode;
+		typedef ObjType Element;
 
 		List(size_t DefaultAllocatorBlock = 16):
 			_pAllocator(CL::RefPtr<Pool<ListNode>>::MakeRefPtr(DefaultAllocatorBlock)), _pFirst(nullptr), _pLast(nullptr), _nElementsCount(0)

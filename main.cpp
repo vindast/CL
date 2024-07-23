@@ -47,6 +47,13 @@ void Validate(std::vector<HashMapPair> mTestValues, const std::unordered_map<siz
 
 int main(int argc, const char* argv[])
 {
+	CL::RefPtr<int> Ref = CL::RefPtr<int>::MakeRefPtr();
+
+
+
+
+	return 0;
+
 	srand(0);
 	bool bTestStd = true;
 

@@ -150,13 +150,15 @@ namespace CL
 		const Element* _pLastElement = nullptr;
 	};
 
-	template<class Element>
+	template<class ObjType>
 	class Vector
 	{
-		typedef Vector<Element> VectorType;
-		typedef VectorForwardIterator<Element> ForwardIterator;
-		typedef VectorConstForwardIterator<Element> ConstForwardIterator;
 	public:
+		typedef Vector<ObjType> VectorType;
+		typedef VectorForwardIterator<ObjType> ForwardIterator;
+		typedef VectorConstForwardIterator<ObjType> ConstForwardIterator;
+		typedef ObjType Element;
+
 		Vector() = default;
 		VectorType(const VectorType& OtherVector)
 		{
