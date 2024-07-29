@@ -463,7 +463,7 @@ namespace CL
 						i |= int(FillSymbol) << 8;
 						i |= int(FillSymbol);
 
-						memset(&GetData()[_nLength], i, NewSize - _nLength);
+						memset(&pNewBuffer[_nLength], i, NewSize - _nLength);
 					}
 				}
 				else if (bFill)
@@ -474,7 +474,7 @@ namespace CL
 					i |= int(FillSymbol) << 8;
 					i |= int(FillSymbol);
 
-					memset(GetData(), i, NewSize);
+					memset(pNewBuffer, i, NewSize);
 				}
 
 				pNewBuffer[NewSize] = CL_STRING_TERMINATOR;
