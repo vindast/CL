@@ -32,16 +32,8 @@ namespace CL
 		friend String ToString(int n) noexcept;
 		friend String ToString(unsigned int n) noexcept;
 	public:
-		String() noexcept
-		{
-			_sbStr.mStr[0] = CL_STRING_TERMINATOR;
-		}
-		String(char C) noexcept
-		{
-			_sbStr.mStr[0] = C;
-			_sbStr.mStr[1] = CL_STRING_TERMINATOR;
-			_nLength = 1;
-		}
+		String() noexcept;
+		String(char C) noexcept;
 		String& operator = (char C)
 		{
 			Clear();
@@ -89,37 +81,8 @@ namespace CL
 
 			return *this;
 		}*/
-		String(const char* pStr, size_t NumCharacters):
-			_nLength(NumCharacters)
-		{
-			if (IsSmallBufferUsed())
-			{
-				memcpy(_sbStr.mStr, pStr, _nLength);
-				_sbStr.mStr[_nLength] = CL_STRING_TERMINATOR;
-			}
-			else
-			{
-				_heapStr._nCapacity = CL_STRING_CAPACITY(_nLength);
-				_heapStr._pStr = (char*)CL_MALLOC(_heapStr._nCapacity);
-				memcpy(_heapStr._pStr, pStr, _nLength);
-				_heapStr._pStr[_nLength] = CL_STRING_TERMINATOR;
-			}
-		}
-		String(const char* pStr)
-		{
-			_nLength = strlen(pStr);
-
-			if (IsSmallBufferUsed())
-			{
-				memcpy(_sbStr.mStr, pStr, _nLength + 1);
-			}
-			else
-			{
-				_heapStr._nCapacity = CL_STRING_CAPACITY(_nLength);
-				_heapStr._pStr = (char*)CL_MALLOC(_heapStr._nCapacity);
-				memcpy(_heapStr._pStr, pStr, _nLength + 1);
-			}
-		}
+		String(const char* pStr, size_t NumCharacters);
+		String(const char* pStr);
 		String& operator = (const char* pStr)
 		{
 			size_t Length = strlen(pStr);
@@ -139,21 +102,7 @@ namespace CL
 
 			return *this;
 		}
-		String(const String& otherStr)
-		{
-			_nLength = otherStr._nLength;
-
-			if (IsSmallBufferUsed())
-			{
-				memcpy(_sbStr.mStr, otherStr._sbStr.mStr, _nLength + 1);
-			}
-			else
-			{
-				_heapStr._nCapacity = otherStr._heapStr._nCapacity;
-				_heapStr._pStr = (char*)CL_MALLOC(_heapStr._nCapacity);
-				memcpy(_heapStr._pStr, otherStr._heapStr._pStr, _nLength + 1);
-			}
-		}
+		String(const String& otherStr);
 		String& operator = (const String& otherStr)
 		{
 			ClearHeapFromNewSize(otherStr._nLength);
@@ -172,24 +121,7 @@ namespace CL
 
 			return *this;
 		}
-		String(String&& otherStr) noexcept
-		{
-			_nLength = otherStr._nLength;
-
-			if (IsSmallBufferUsed())
-			{
-				memcpy(_sbStr.mStr, otherStr._sbStr.mStr, _nLength + 1);
-			}
-			else
-			{
-				_heapStr._nCapacity = otherStr._heapStr._nCapacity;
-				_heapStr._pStr = otherStr._heapStr._pStr;
-
-				otherStr._nLength = 0;
-				otherStr._heapStr._nCapacity = 0;
-				otherStr._heapStr._pStr = nullptr;
-			}
-		}
+		String(String&& otherStr) noexcept;
 		String& operator = (String&& otherStr) noexcept
 		{
 			ClearHeapFromNewSize(otherStr._nLength);
@@ -312,14 +244,19 @@ namespace CL
 
 			return *this;
 		}
-		String& operator += (const char* sourceStr)
+		String& operator += (const char* SourceStr)
 		{
-			size_t SourceLength = strlen(sourceStr);
+			if (!SourceStr)
+			{
+				return *this;
+			}
+
+			size_t SourceLength = strlen(SourceStr);
 			size_t NewLength = _nLength + SourceLength;
 
 			if (NewLength < sizeof(_sbStr))
 			{
-				memcpy(&_sbStr.mStr[_nLength], sourceStr, SourceLength + 1);
+				memcpy(&_sbStr.mStr[_nLength], SourceStr, SourceLength + 1);
 			}
 			else
 			{
@@ -329,7 +266,7 @@ namespace CL
 				{
 					char* pNewBuffer = (char*)CL_MALLOC(NewCapacity);
 					memcpy(pNewBuffer, GetData(), _nLength);
-					memcpy(&pNewBuffer[_nLength], sourceStr, SourceLength + 1);
+					memcpy(&pNewBuffer[_nLength], SourceStr, SourceLength + 1);
 
 					if (!IsSmallBufferUsed())
 					{
@@ -341,7 +278,7 @@ namespace CL
 				}
 				else
 				{
-					memcpy(&_heapStr._pStr[_nLength], sourceStr, SourceLength + 1);
+					memcpy(&_heapStr._pStr[_nLength], SourceStr, SourceLength + 1);
 				}
 			}
 
@@ -425,247 +362,14 @@ namespace CL
 			CL_DEBUG_ASSERT(Index < _nLength);
 			return IsSmallBufferUsed() ? _sbStr.mStr[Index] : _heapStr._pStr[Index];
 		}
-		void Resize(size_t NewSize, bool bDoCopy = true, bool bFill = true, char FillSymbol = ' ')
-		{
-			size_t OldLength = _nLength;
-
-			if(NewSize < GetCapacity())
-			{
-				_nLength = NewSize;
-				GetData()[_nLength] = CL_STRING_TERMINATOR;
-
-				if (bFill)
-				{
-					int i = 0x0000000;
-					i |= int(FillSymbol) << 24;
-					i |= int(FillSymbol) << 16;
-					i |= int(FillSymbol) << 8;
-					i |= int(FillSymbol);
-
-					memset(GetData(), i, NewSize);
-				}
-			}
-			else
-			{
-				size_t NewCapacity = CL_STRING_CAPACITY(NewSize + 1);
-
-				char* pNewBuffer = (char*)CL_MALLOC(NewCapacity);
-
-				if (bDoCopy)
-				{
-					memcpy(pNewBuffer, GetData(), _nLength);
-
-					if (bFill)
-					{
-						int i = 0x0000000;
-						i |= int(FillSymbol) << 24;
-						i |= int(FillSymbol) << 16;
-						i |= int(FillSymbol) << 8;
-						i |= int(FillSymbol);
-
-						memset(&pNewBuffer[_nLength], i, NewSize - _nLength);
-					}
-				}
-				else if (bFill)
-				{
-					int i = 0x0000000;
-					i |= int(FillSymbol) << 24;
-					i |= int(FillSymbol) << 16;
-					i |= int(FillSymbol) << 8;
-					i |= int(FillSymbol);
-
-					memset(pNewBuffer, i, NewSize);
-				}
-
-				pNewBuffer[NewSize] = CL_STRING_TERMINATOR;
-				
-				if (!IsSmallBufferUsed())
-				{
-					CL_FREE(_heapStr._pStr);
-				}
-
-				_heapStr._pStr = pNewBuffer;
-				_heapStr._nCapacity = NewCapacity;
-				_nLength = NewSize;
-			}
-		}
-		size_t FindFirst(const char* pStrToSearch, size_t Offset = 0) const
-		{
-			if (Offset < _nLength && pStrToSearch)
-			{
-				const char* pSearchSource = pStrToSearch;
-				const char* pTarget = GetData() + Offset;
-				const char* pLast = GetData() + _nLength;
-
-				while (pTarget != pLast)
-				{
-					const char* pLocalCmpString = pTarget;
-
-					while (*pLocalCmpString == *pSearchSource && pLocalCmpString != pLast)
-					{
-						pSearchSource++;
-						pLocalCmpString++;
-
-						if (*pSearchSource == CL_STRING_TERMINATOR)
-						{
-							return pTarget - GetData();
-						}
-					}
-
-					pSearchSource = pStrToSearch;
-					pTarget++;
-				}
-			}
-			
-			return NullPos();
-		}
-		size_t FindFirst(const CL::String& StrToSearch, size_t Offset = 0) const
-		{
-			if (Offset < _nLength && !StrToSearch.IsEmpty())
-			{
-				const char* pStrToSearch = StrToSearch.CStr();
-				const char* pSearchSource = pStrToSearch;
-				const char* pTarget = GetData() + Offset;
-				const char* pLast = GetData() + _nLength;
-
-				while (pTarget != pLast)
-				{
-					const char* pLocalCmpString = pTarget;
-
-					while (*pLocalCmpString == *pSearchSource && pLocalCmpString != pLast)
-					{
-						pSearchSource++;
-						pLocalCmpString++;
-
-						if (*pSearchSource == CL_STRING_TERMINATOR)
-						{
-							return pTarget - GetData();
-						}
-					}
-
-					pSearchSource = pStrToSearch;
-					pTarget++;
-				}
-			}
-
-			return NullPos();
-		}
-		size_t FindLast(const char* pStrToSearch, size_t Offset = 0) const
-		{
-			if (Offset < _nLength && pStrToSearch)
-			{
-				const char* pSearchSource = pStrToSearch;
-				const char* pTarget = GetData() + _nLength - Offset - 1;
-				const char* pLast = GetData();
-
-				while (pTarget != pLast)
-				{
-					const char* pLocalCmpString = pTarget;
-
-					while (*pLocalCmpString == *pSearchSource && pLocalCmpString != pLast)
-					{
-						pSearchSource++;
-						pLocalCmpString++;
-
-						if (*pSearchSource == CL_STRING_TERMINATOR)
-						{
-							return pTarget - GetData();
-						}
-					}
-
-					pSearchSource = pStrToSearch;
-					pTarget--;
-				}
-			}
-
-			return NullPos();
-		}
-		size_t FindLast(const CL::String& StrToSearch, size_t Offset = 0) const
-		{
-			if (Offset < _nLength && !StrToSearch.IsEmpty())
-			{
-				const char* pStrToSearch = StrToSearch.CStr();
-				const char* pSearchSource = pStrToSearch;
-				const char* pTarget = GetData() + _nLength - Offset - 1;
-				const char* pLast = GetData();
-
-				while (pTarget != pLast)
-				{
-					const char* pLocalCmpString = pTarget;
-
-					while (*pLocalCmpString == *pSearchSource && pLocalCmpString != pLast)
-					{
-						pSearchSource++;
-						pLocalCmpString++;
-
-						if (*pSearchSource == CL_STRING_TERMINATOR)
-						{
-							return pTarget - GetData();
-						}
-					}
-
-					pSearchSource = pStrToSearch;
-					pTarget--;
-				}
-			}
-
-			return NullPos();
-		}
-		size_t FindLast(char SimbolToFind, size_t Offset = 0) const
-		{
-			if (Offset < _nLength)
-			{
-				const char* pFirst = GetData();
-				const char* pTarget = pFirst + _nLength - Offset - 1;
-
-				if (pFirst > pTarget)
-				{
-					return NullPos();
-				}
-
-				while (pTarget != pFirst)
-				{
-					if (*pTarget == SimbolToFind)
-					{
-						return pTarget - GetData();
-					}
-
-					pTarget--;
-				}
-			}
-
-			return NullPos();
-		}
-		size_t FindFirst(char c, size_t Offset = 0) const
-		{
-			if (Offset < _nLength)
-			{
-				const char* pTarget = GetData() + Offset;
-
-				while (*pTarget)
-				{
-					if (*pTarget == c)
-					{
-						return pTarget - GetData();
-					}
-
-					pTarget++;
-				}
-			}
-
-			return NullPos();
-		}
-		String Substring(size_t Position, size_t FragmentLength = NullPos()) const noexcept
-		{
-			String Str;
-
-			if (Position < _nLength)
-			{
-				Str = String(GetData() + Position, CL_MIN(FragmentLength, _nLength - Position));
-			}
-
-			return Str;
-		}
+		void Resize(size_t NewSize, bool bDoCopy = true, bool bFill = true, char FillSymbol = ' ');
+		size_t FindFirst(const char* pStrToSearch, size_t Offset = 0) const;
+		size_t FindFirst(const CL::String& StrToSearch, size_t Offset = 0) const;
+		size_t FindLast(const char* pStrToSearch, size_t Offset = 0) const;
+		size_t FindLast(const CL::String& StrToSearch, size_t Offset = 0) const;
+		size_t FindLast(char SimbolToFind, size_t Offset = 0) const;
+		size_t FindFirst(char c, size_t Offset = 0) const;
+		String Substring(size_t Position, size_t FragmentLength = NullPos()) const noexcept;
 		bool IsSmallBufferUsed() const noexcept { return _nLength < sizeof(_sbStr); }
 		char* GetData() noexcept { return IsSmallBufferUsed() ? _sbStr.mStr : _heapStr._pStr; }
 		const char* GetData() const noexcept { return IsSmallBufferUsed() ? _sbStr.mStr : _heapStr._pStr; }
@@ -673,38 +377,13 @@ namespace CL
 		const char* CStr() const noexcept { return IsSmallBufferUsed() ? _sbStr.mStr : _heapStr._pStr; }
 		size_t GetLength() const noexcept { return _nLength; }
 		size_t GetCapacity() const noexcept { return IsSmallBufferUsed() ? sizeof(_sbStr) : _heapStr._nCapacity; }
-		void Clear()
-		{
-			ClearHeapFromNewSize(0);
-			_sbStr.mStr[0] = CL_STRING_TERMINATOR;
-			_nLength = 0;
-		}
-		void clear()
-		{
-			ClearHeapFromNewSize(0);
-			_sbStr.mStr[0] = CL_STRING_TERMINATOR;
-			_nLength = 0;
-		}
+		void Clear();
+		void clear();
 		bool IsEmpty() const { return _nLength == 0; }
 		constexpr static size_t NullPos() { return SIZE_MAX; }
-		~String()
-		{
-			ClearHeapFromNewSize(0);
-		}
+		~String();
 	private:
-		__forceinline void ClearHeapFromNewSize(size_t NewLength) noexcept
-		{
-			if (IsSmallBufferUsed())
-			{
-				return;
-			}
-
-			if (NewLength < sizeof(_sbStr) || NewLength >= _heapStr._nCapacity)
-			{
-				CL_FREE(_heapStr._pStr);
-				_heapStr._pStr = nullptr;
-			}
-		}
+		__forceinline void ClearHeapFromNewSize(size_t NewLength) noexcept;
 
 		size_t _nLength = 0;
 
