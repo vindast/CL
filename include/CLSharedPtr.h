@@ -122,6 +122,17 @@ namespace CL
 			other._pControlSection = nullptr;
 			return *this;
 		}
+		template<class T2>
+		SharedPtr<T2> ReinterpretCast()
+		{
+			SharedPtr<T2> Ptr;
+			if (_pControlSection)
+			{
+				Ptr._pControlSection = reinterpret_cast<SharedPtr<T2>::TConstrolSection*>(_pControlSection);
+				Ptr._pControlSection->nStrongRef++;
+			}
+			return Ptr;
+		}
 		static TSharedPtr MakeSharedFromHere(Object* pObject)
 		{
 			TSharedPtr ptr;
