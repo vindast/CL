@@ -95,7 +95,7 @@ namespace CL
 
 			for (auto it : UniqueLeaks)
 			{
-				Log.PushMessageFormated("	Count %d, %f MB, call from: %s ", it.second.Count, ByteToMb(it.second.Size), it.first);
+				Log.PushMessageFormated("	Count %d, %f MB, call from: %s , Data = %s", it.second.Count, ByteToMb(it.second.Size), it.first, it.second.Data.c_str());
 			}
 		}
 
@@ -106,7 +106,7 @@ namespace CL
 
 			for (auto it : UniqueLeaks)
 			{
-				Log.PushMessageFormated("	Count %d, call from: %s ", it.second.Count, it.first);
+				Log.PushMessageFormated("	Count %d, call from: %s , Data = %s", it.second.Count, it.first, it.second.Data.c_str());
 			}
 		}
 	}
@@ -232,6 +232,26 @@ namespace CL
 			{
 				it->second.Count++;
 				it->second.Size += LeakIt.second.Size;
+
+				std::string Str;
+				
+				if (LeakIt.second.pDebugStr)
+				{
+					Str = "'";
+					Str += LeakIt.second.pDebugStr;
+					Str += "'";
+				}
+
+				Str += " Mem ='";
+
+				for (size_t I = 0; I < LeakIt.second.Size; I++)
+				{
+					Str += ((char*)LeakIt.second.pMemory)[I];
+				}
+
+				Str += "'";
+
+				it->second.Data = Str;
 			}
 		}
 
