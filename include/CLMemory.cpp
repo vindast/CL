@@ -95,7 +95,7 @@ namespace CL
 
 			for (auto it : UniqueLeaks)
 			{
-				Log.PushMessageFormated("	Count %d, %f MB, call from: %s ", it.second.Count, ByteToMb(it.second.Size), it.first);
+				Log.PushMessageFormated("	Count %d, %f MB, call from: %s , Data = %s", it.second.Count, ByteToMb(it.second.Size), it.first, it.second.Data.c_str());
 			}
 		}
 
@@ -106,7 +106,7 @@ namespace CL
 
 			for (auto it : UniqueLeaks)
 			{
-				Log.PushMessageFormated("	Count %d, call from: %s ", it.second.Count, it.first);
+				Log.PushMessageFormated("	Count %d, call from: %s , Data = %s", it.second.Count, it.first, it.second.Data.c_str());
 			}
 		}
 	}
@@ -250,6 +250,7 @@ namespace CL
 				}
 
 				Str += "'";
+				it->second.Data = Str;
 			}
 		}
 
