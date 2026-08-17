@@ -227,14 +227,9 @@ namespace CL
 			if (it == UniqueLeaks.end())
 			{
 				UniqueLeaks.insert(std::make_pair(LeakIt.second.pDebugStr, MemoryLeakData(1, LeakIt.second.Size)));
-			}
-			else
-			{
-				it->second.Count++;
-				it->second.Size += LeakIt.second.Size;
 
 				std::string Str;
-				
+
 				if (LeakIt.second.pDebugStr)
 				{
 					Str = "'";
@@ -250,7 +245,14 @@ namespace CL
 				}
 
 				Str += "'";
+
+				it = UniqueLeaks.find(LeakIt.second.pDebugStr);
 				it->second.Data = Str;
+			}
+			else
+			{
+				it->second.Count++;
+				it->second.Size += LeakIt.second.Size;
 			}
 		}
 
