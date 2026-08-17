@@ -12,5 +12,5 @@ namespace CL
 	String ToString(unsigned int n) noexcept;
 	String ToString(int n) noexcept;
 	String FormatString(const char* fmt, ...);
-	void SplitBy(CL::Vector<CL::String>& OutStrings, CL::String SourseString, char SplitSymbol);;
+	void SplitBy(CL::Vector<CL::String>& OutStrings, CL::String SourseString, char SplitSymbol);
 }

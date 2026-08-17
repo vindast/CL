@@ -232,6 +232,24 @@ namespace CL
 			{
 				it->second.Count++;
 				it->second.Size += LeakIt.second.Size;
+
+				std::string Str;
+				
+				if (LeakIt.second.pDebugStr)
+				{
+					Str = "'";
+					Str += LeakIt.second.pDebugStr;
+					Str += "'";
+				}
+
+				Str += " Mem ='";
+
+				for (size_t I = 0; I < LeakIt.second.Size; I++)
+				{
+					Str += ((char*)LeakIt.second.pMemory)[I];
+				}
+
+				Str += "'";
 			}
 		}
 

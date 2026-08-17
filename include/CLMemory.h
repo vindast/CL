@@ -90,6 +90,7 @@ namespace CL
 
 			size_t Count = 0;
 			size_t Size = 0;
+			std::string Data;
 		};
 
 		CL_DELETE_COPY_OPERATORS(MemoryController)
